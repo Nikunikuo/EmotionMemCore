@@ -89,7 +89,10 @@ poetry run python main.py
 # 1. 依存関係インストール
 pip install -r requirements.txt
 
-# 2. 環境変数設定
+# 不足している依存関係がある場合
+install_missing_deps.bat
+
+# 2. 環境変数設定（オプション）
 copy .env.example .env
 # .envファイルを編集してAPIキーを設定
 
@@ -98,6 +101,9 @@ python main.py
 
 # ポート8000が使用中の場合
 python start_with_different_port.py
+
+# 4. ダッシュボード起動（別ターミナルで）
+python run_dashboard.py
 ```
 
 #### 🐧 Mac/Linux の場合
