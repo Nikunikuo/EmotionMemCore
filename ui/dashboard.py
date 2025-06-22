@@ -176,6 +176,14 @@ def create_dashboard_app() -> FastAPI:
             "page_title": "EmotionMemCore ダッシュボード"
         })
     
+    @app.get("/welcome", response_class=HTMLResponse)
+    async def welcome_page(request: Request):
+        """初回起動ウェルカムページ"""
+        return templates.TemplateResponse("welcome.html", {
+            "request": request,
+            "page_title": "EmotionMemCore へようこそ"
+        })
+    
     @app.get("/memories", response_class=HTMLResponse)
     async def memories_page(request: Request):
         """記憶管理ページ"""

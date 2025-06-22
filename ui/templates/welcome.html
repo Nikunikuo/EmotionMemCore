@@ -1,0 +1,627 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- 初回起動ウィザード -->
+<div class="welcome-container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- ウェルカムヘッダー -->
+            <div class="welcome-header text-center mb-5">
+                <div class="welcome-logo">🤖</div>
+                <h1 class="welcome-title">EmotionMemCore へようこそ！</h1>
+                <p class="welcome-subtitle">感情付き記憶システム - 初心者でも3分で使えます</p>
+            </div>
+            
+            <!-- ステップインジケーター -->
+            <div class="step-indicator mb-4">
+                <div class="step active" id="step-1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">ようこそ</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" id="step-2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">簡単説明</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" id="step-3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">体験開始</div>
+                </div>
+            </div>
+            
+            <!-- ステップ1: ようこそ -->
+            <div class="wizard-step active" id="wizard-step-1">
+                <div class="step-card">
+                    <h3>🎉 初めまして！</h3>
+                    <p class="step-description">
+                        EmotionMemCore は <strong>AIとの会話を記憶するシステム</strong> です。<br>
+                        難しい設定は一切不要で、今すぐ体験できます！
+                    </p>
+                    
+                    <div class="feature-grid">
+                        <div class="feature-item">
+                            <div class="feature-icon">🎭</div>
+                            <div class="feature-text">
+                                <strong>感情も一緒に記憶</strong><br>
+                                「喜び」「悲しみ」など38種類の感情を自動分析
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">🔍</div>
+                            <div class="feature-text">
+                                <strong>自然な言葉で検索</strong><br>
+                                「楽しかった話」「悲しい出来事」で記憶を検索
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">📊</div>
+                            <div class="feature-text">
+                                <strong>美しいグラフ表示</strong><br>
+                                感情の変化を美しいグラフで可視化
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">🔌</div>
+                            <div class="feature-text">
+                                <strong>簡単にAIと連携</strong><br>
+                                AITuberKit等との連携も簡単設定
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step-actions">
+                        <button class="btn btn-primary btn-lg" onclick="nextStep()">
+                            次へ進む <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ステップ2: 簡単説明 -->
+            <div class="wizard-step" id="wizard-step-2">
+                <div class="step-card">
+                    <h3>📋 使い方はこんなに簡単！</h3>
+                    <p class="step-description">
+                        たった3ステップで EmotionMemCore を体験できます
+                    </p>
+                    
+                    <div class="usage-steps">
+                        <div class="usage-step">
+                            <div class="usage-number">1️⃣</div>
+                            <div class="usage-content">
+                                <h5>会話を入力</h5>
+                                <p>「今日は楽しかった！」「それは良かったですね」のように、ユーザーとAIの会話を入力</p>
+                                <div class="usage-example">
+                                    <div class="message user-message">「今日のお天気はとてもいいですね！」</div>
+                                    <div class="message ai-message">「本当にいいお天気ですね！散歩日和です」</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="usage-step">
+                            <div class="usage-number">2️⃣</div>
+                            <div class="usage-content">
+                                <h5>自動で感情分析</h5>
+                                <p>システムが自動で感情を分析し、「喜び」「期待」などのタグを付けて記憶します</p>
+                                <div class="emotion-tags-example">
+                                    <span class="emotion-tag">喜び</span>
+                                    <span class="emotion-tag">期待</span>
+                                    <span class="emotion-tag">安心</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="usage-step">
+                            <div class="usage-number">3️⃣</div>
+                            <div class="usage-content">
+                                <h5>いつでも検索</h5>
+                                <p>「天気の話」「楽しかった記憶」など、自然な日本語で過去の記憶を検索</p>
+                                <div class="search-example">
+                                    <input type="text" class="form-control" value="天気の良い日の話" readonly>
+                                    <div class="search-result">✅ 1件の記憶が見つかりました</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step-actions">
+                        <button class="btn btn-secondary" onclick="prevStep()">
+                            <i class="bi bi-arrow-left"></i> 戻る
+                        </button>
+                        <button class="btn btn-primary btn-lg" onclick="nextStep()">
+                            体験してみる <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ステップ3: 体験開始 -->
+            <div class="wizard-step" id="wizard-step-3">
+                <div class="step-card">
+                    <h3>🚀 さあ、始めましょう！</h3>
+                    <p class="step-description">
+                        準備完了です！下のボタンで EmotionMemCore を体験してみてください
+                    </p>
+                    
+                    <div class="start-options">
+                        <div class="start-option recommended">
+                            <div class="option-badge">おすすめ</div>
+                            <div class="option-icon">🧪</div>
+                            <h5>機能テストで体験</h5>
+                            <p>サンプルデータを使って、まずは機能を体験してみましょう</p>
+                            <button class="btn btn-success btn-lg" onclick="goToTest()">
+                                <i class="bi bi-play-circle"></i> 機能テストを開始
+                            </button>
+                        </div>
+                        
+                        <div class="start-option">
+                            <div class="option-icon">📊</div>
+                            <h5>ダッシュボードを見る</h5>
+                            <p>システム全体の概要を確認したい方はこちら</p>
+                            <button class="btn btn-primary" onclick="goToDashboard()">
+                                <i class="bi bi-speedometer2"></i> ダッシュボードへ
+                            </button>
+                        </div>
+                        
+                        <div class="start-option">
+                            <div class="option-icon">🔍</div>
+                            <h5>記憶検索を試す</h5>
+                            <p>自然言語での検索機能を試してみたい方はこちら</p>
+                            <button class="btn btn-info" onclick="goToSearch()">
+                                <i class="bi bi-search"></i> 記憶検索へ
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="help-section">
+                        <h6>💡 困ったときは...</h6>
+                        <div class="help-links">
+                            <a href="/settings" class="help-link">
+                                <i class="bi bi-gear"></i> 設定ガイド
+                            </a>
+                            <a href="https://github.com/Nikunikuo/EmotionMemCore" target="_blank" class="help-link">
+                                <i class="bi bi-github"></i> GitHub
+                            </a>
+                            <a href="http://localhost:8000/docs" target="_blank" class="help-link">
+                                <i class="bi bi-book"></i> API仕様
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="step-actions">
+                        <button class="btn btn-secondary" onclick="prevStep()">
+                            <i class="bi bi-arrow-left"></i> 戻る
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="skipWizard()">
+                            ウィザードをスキップ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .welcome-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem 0;
+    }
+    
+    .welcome-header {
+        color: white;
+        margin-bottom: 3rem;
+    }
+    
+    .welcome-logo {
+        font-size: 5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .welcome-title {
+        font-size: 3rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+    }
+    
+    .welcome-subtitle {
+        font-size: 1.3rem;
+        opacity: 0.9;
+    }
+    
+    .step-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 3rem;
+    }
+    
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+    
+    .step-number {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .step.active .step-number {
+        background: #4CAF50;
+        transform: scale(1.1);
+    }
+    
+    .step-label {
+        color: white;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+    
+    .step-line {
+        width: 100px;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.3);
+        margin: 0 1rem;
+        margin-top: -25px;
+    }
+    
+    .wizard-step {
+        display: none;
+    }
+    
+    .wizard-step.active {
+        display: block;
+        animation: fadeInUp 0.5s ease-out;
+    }
+    
+    .step-card {
+        background: white;
+        border-radius: 1.5rem;
+        padding: 3rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    
+    .step-card h3 {
+        color: #333;
+        margin-bottom: 1.5rem;
+        font-size: 2rem;
+    }
+    
+    .step-description {
+        font-size: 1.1rem;
+        color: #666;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+    
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+    
+    .feature-item {
+        display: flex;
+        align-items: flex-start;
+        text-align: left;
+        padding: 1rem;
+        border-radius: 1rem;
+        background: #f8f9fa;
+    }
+    
+    .feature-icon {
+        font-size: 2rem;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    
+    .feature-text {
+        flex: 1;
+    }
+    
+    .usage-steps {
+        margin: 2rem 0;
+    }
+    
+    .usage-step {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 2rem;
+        text-align: left;
+    }
+    
+    .usage-number {
+        font-size: 2rem;
+        margin-right: 1.5rem;
+        flex-shrink: 0;
+    }
+    
+    .usage-content {
+        flex: 1;
+    }
+    
+    .usage-content h5 {
+        margin-bottom: 0.5rem;
+        color: #333;
+    }
+    
+    .usage-example {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+    }
+    
+    .message {
+        padding: 0.5rem 1rem;
+        margin: 0.5rem 0;
+        border-radius: 1rem;
+    }
+    
+    .user-message {
+        background: #007bff;
+        color: white;
+        margin-left: 2rem;
+    }
+    
+    .ai-message {
+        background: #28a745;
+        color: white;
+        margin-right: 2rem;
+    }
+    
+    .emotion-tags-example {
+        margin-top: 1rem;
+    }
+    
+    .emotion-tag {
+        display: inline-block;
+        background: linear-gradient(45deg, #FF9800, #FFB74D);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        margin: 0.25rem;
+        font-size: 0.9rem;
+    }
+    
+    .search-example {
+        margin-top: 1rem;
+    }
+    
+    .search-result {
+        margin-top: 0.5rem;
+        color: #28a745;
+        font-weight: bold;
+    }
+    
+    .start-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+    
+    .start-option {
+        padding: 2rem;
+        border: 2px solid #e9ecef;
+        border-radius: 1rem;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+    
+    .start-option:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .start-option.recommended {
+        border-color: #28a745;
+        background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+    }
+    
+    .option-badge {
+        position: absolute;
+        top: -10px;
+        right: 1rem;
+        background: #28a745;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    
+    .option-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .start-option h5 {
+        margin-bottom: 1rem;
+        color: #333;
+    }
+    
+    .start-option p {
+        color: #666;
+        margin-bottom: 1.5rem;
+    }
+    
+    .help-section {
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .help-links {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .help-link {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: #f8f9fa;
+        color: #666;
+        text-decoration: none;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .help-link:hover {
+        background: #e9ecef;
+        color: #333;
+        text-decoration: none;
+    }
+    
+    .help-link i {
+        margin-right: 0.5rem;
+    }
+    
+    .step-actions {
+        margin-top: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .welcome-container {
+            padding: 1rem 0;
+        }
+        
+        .step-card {
+            padding: 2rem 1.5rem;
+        }
+        
+        .welcome-title {
+            font-size: 2rem;
+        }
+        
+        .feature-grid,
+        .start-options {
+            grid-template-columns: 1fr;
+        }
+        
+        .step-indicator {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .step-line {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let currentStep = 1;
+    const totalSteps = 3;
+    
+    // ページ読み込み時の初期化
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初回訪問チェック
+        const hasVisited = localStorage.getItem('emotionmemcore_visited');
+        if (hasVisited) {
+            // 既に訪問済みの場合はダッシュボードにリダイレクト
+            window.location.href = '/';
+            return;
+        }
+        
+        showStep(1);
+    });
+    
+    // ステップ表示
+    function showStep(step) {
+        // 全ステップを非表示
+        for (let i = 1; i <= totalSteps; i++) {
+            const stepElement = document.getElementById(`wizard-step-${i}`);
+            const indicatorElement = document.getElementById(`step-${i}`);
+            
+            if (stepElement) stepElement.classList.remove('active');
+            if (indicatorElement) indicatorElement.classList.remove('active');
+        }
+        
+        // 指定ステップを表示
+        const targetStep = document.getElementById(`wizard-step-${step}`);
+        const targetIndicator = document.getElementById(`step-${step}`);
+        
+        if (targetStep) targetStep.classList.add('active');
+        if (targetIndicator) targetIndicator.classList.add('active');
+        
+        currentStep = step;
+    }
+    
+    // 次のステップ
+    function nextStep() {
+        if (currentStep < totalSteps) {
+            showStep(currentStep + 1);
+        }
+    }
+    
+    // 前のステップ
+    function prevStep() {
+        if (currentStep > 1) {
+            showStep(currentStep - 1);
+        }
+    }
+    
+    // 機能テストページへ
+    function goToTest() {
+        localStorage.setItem('emotionmemcore_visited', 'true');
+        window.location.href = '/test';
+    }
+    
+    // ダッシュボードページへ
+    function goToDashboard() {
+        localStorage.setItem('emotionmemcore_visited', 'true');
+        window.location.href = '/';
+    }
+    
+    // 記憶検索ページへ
+    function goToSearch() {
+        localStorage.setItem('emotionmemcore_visited', 'true');
+        window.location.href = '/search';
+    }
+    
+    // ウィザードをスキップ
+    function skipWizard() {
+        localStorage.setItem('emotionmemcore_visited', 'true');
+        window.location.href = '/';
+    }
+</script>
+{% endblock %}
