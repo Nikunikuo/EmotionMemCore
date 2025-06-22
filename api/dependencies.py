@@ -3,10 +3,11 @@
 """
 
 import os
-from typing import Optional
+from typing import Optional, Union
 
 from core.llm import ClaudeLLM, MockLLM
 from core.embedding.openai_client import OpenAIEmbeddingClient
+from core.embedding.mock_client import MockEmbeddingClient
 from infrastructure.db import ChromaDBClient, ChromaMemoryStore, CollectionManager
 from services.memory_service import MemoryService
 from infrastructure.config.logger import get_logger
@@ -16,7 +17,7 @@ logger = get_logger(__name__)
 # シングルトンインスタンス
 _memory_service: Optional[MemoryService] = None
 _chroma_client: Optional[ChromaDBClient] = None
-_embedding_client: Optional[OpenAIEmbeddingClient] = None
+_embedding_client: Optional[Union[OpenAIEmbeddingClient, MockEmbeddingClient]] = None
 _collection_manager: Optional[CollectionManager] = None
 
 
@@ -33,15 +34,27 @@ async def get_chroma_client() -> ChromaDBClient:
     return _chroma_client
 
 
-async def get_embedding_client() -> OpenAIEmbeddingClient:
+async def get_embedding_client():
     """Embeddingクライアント取得"""
     global _embedding_client
     
     if _embedding_client is None:
-        model = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
-        _embedding_client = OpenAIEmbeddingClient(model=model)
+        # OpenAI API Key チェック
+        openai_api_key = os.getenv("OPENAI_API_KEY")
         
-        logger.info("embedding_client_initialized", model=model)
+        if openai_api_key:
+            # OpenAI Embedding Client を使用
+            model = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+            try:
+                _embedding_client = OpenAIEmbeddingClient(model=model)
+                logger.info("embedding_client_initialized", model=model)
+            except Exception as e:
+                logger.warning("openai_embedding_failed_fallback_to_mock", error=str(e))
+                _embedding_client = MockEmbeddingClient(model="mock-embedding")
+        else:
+            # Mock Embedding Client にフォールバック
+            logger.warning("openai_api_key_missing_using_mock_embedding")
+            _embedding_client = MockEmbeddingClient(model="mock-embedding")
     
     return _embedding_client
 
@@ -78,17 +91,24 @@ async def get_llm_client():
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
             logger.warning("anthropic_api_key_missing_fallback_to_mock")
-            return MockLLM()
+            mock_config = {"model": "mock-claude", "max_tokens": 1000}
+            return MockLLM(model_config=mock_config)
         
         model = os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
-        return ClaudeLLM(api_key=api_key, model=model)
+        model_config = {
+            "model": model,
+            "max_tokens": 1000,
+            "temperature": 0.3
+        }
+        return ClaudeLLM(model_config=model_config)
     
     else:
         logger.warning(
             "unsupported_llm_provider_fallback_to_mock",
             provider=llm_provider
         )
-        return MockLLM()
+        mock_config = {"model": "mock-unknown", "max_tokens": 1000}
+        return MockLLM(model_config=mock_config)
 
 
 async def get_memory_service() -> MemoryService:

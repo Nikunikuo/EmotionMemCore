@@ -95,6 +95,9 @@ copy .env.example .env
 
 # 3. 開発サーバー起動
 python main.py
+
+# ポート8000が使用中の場合
+python start_with_different_port.py
 ```
 
 #### 🐧 Mac/Linux の場合
