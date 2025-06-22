@@ -14,8 +14,11 @@ from .emotion import Emotion
 
 class SaveRequest(BaseSchema, MetadataMixin):
     """記憶保存リクエスト"""
-    user: str = Field(..., description="ユーザーの発言")
-    ai: str = Field(..., description="AIの応答")
+    user_message: str = Field(..., description="ユーザーの発言")
+    ai_message: str = Field(..., description="AIの応答")
+    user_id: Optional[str] = Field("default_user", description="ユーザーID")
+    session_id: Optional[str] = Field(None, description="セッションID")
+    app_name: Optional[str] = Field(None, description="アプリケーション名")
     timestamp: Optional[datetime] = Field(
         default_factory=datetime.utcnow,
         description="対話のタイムスタンプ"
@@ -25,11 +28,20 @@ class SaveRequest(BaseSchema, MetadataMixin):
         description="前後の会話文脈（オプション）"
     )
     
-    @validator("user", "ai")
+    @validator("user_message", "ai_message")
     def validate_not_empty(cls, v):
         if not v or not v.strip():
             raise ValueError("発言内容は空にできません")
         return v.strip()
+
+
+class SaveResponse(BaseSchema):
+    """記憶保存レスポンス"""
+    success: bool = Field(..., description="保存成功フラグ")
+    memory_id: UUID = Field(..., description="作成された記憶ID")
+    summary: str = Field(..., description="生成された要約")
+    emotions: List[Emotion] = Field(..., description="抽出された感情タグ")
+    message: Optional[str] = Field(None, description="追加メッセージ")
 
 
 class SearchRequest(BaseSchema):

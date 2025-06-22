@@ -6,6 +6,7 @@ from .base import BaseSchema, TimestampMixin, MetadataMixin
 from .emotion import Emotion
 from .memory import (
     SaveRequest,
+    SaveResponse,
     SearchRequest,
     Memory,
     SearchResult,
@@ -23,6 +24,7 @@ __all__ = [
     
     # Memory
     "SaveRequest",
+    "SaveResponse",
     "SearchRequest",
     "Memory",
     "SearchResult",
