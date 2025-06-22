@@ -17,7 +17,7 @@ from api.middleware import (
     error_handler, logging_middleware, performance_middleware,
     auth_middleware, rate_limit_middleware
 )
-from api.middleware.cors import create_cors_middleware, add_security_headers, validate_request_headers
+from api.middleware.cors import get_cors_settings, add_security_headers, validate_request_headers
 from infrastructure.config.logger import get_logger
 from docs.openapi_config import get_custom_openapi
 
@@ -71,14 +71,14 @@ def create_app() -> FastAPI:
     )
     
     # CORS設定
-    cors_middleware = create_cors_middleware()
+    cors_settings = get_cors_settings()
     app.add_middleware(
-        type(cors_middleware),
-        allow_origins=cors_middleware.allow_origins,
-        allow_credentials=cors_middleware.allow_credentials,
-        allow_methods=cors_middleware.allow_methods,
-        allow_headers=cors_middleware.allow_headers,
-        expose_headers=getattr(cors_middleware, 'expose_headers', [])
+        CORSMiddleware,
+        allow_origins=cors_settings["allow_origins"],
+        allow_credentials=cors_settings["allow_credentials"],
+        allow_methods=cors_settings["allow_methods"],
+        allow_headers=cors_settings["allow_headers"],
+        expose_headers=cors_settings.get("expose_headers", [])
     )
     
     # セキュリティミドルウェア追加（順序重要）
