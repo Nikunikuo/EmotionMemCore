@@ -62,7 +62,7 @@ open http://localhost:8000/docs
 .\quick_setup.bat
 ```
 
-**手動セットアップ:**
+**Poetry を使う場合:**
 ```powershell
 # 1. Poetry インストール（PowerShell）
 (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
@@ -73,16 +73,33 @@ pip install poetry
 # 2. 依存関係インストール
 poetry install
 
-# 3. 環境変数設定
+# 3. NumPy バージョン修正（ChromaDB互換性のため）
+poetry run pip install "numpy<2.0"
+
+# 4. 環境変数設定
 copy .env.example .env
 # .envファイルを編集してAPIキーを設定
 
-# 4. 開発サーバー起動
+# 5. 開発サーバー起動
 poetry run python main.py
+```
+
+**pip を使う場合（Poetry なし）:**
+```powershell
+# 1. 依存関係インストール
+pip install -r requirements.txt
+
+# 2. 環境変数設定
+copy .env.example .env
+# .envファイルを編集してAPIキーを設定
+
+# 3. 開発サーバー起動
+python main.py
 ```
 
 #### 🐧 Mac/Linux の場合
 
+**Poetry を使う場合:**
 ```bash
 # 1. Poetry インストール
 curl -sSL https://install.python-poetry.org | python3 -
@@ -90,12 +107,28 @@ curl -sSL https://install.python-poetry.org | python3 -
 # 2. 依存関係インストール
 poetry install
 
-# 3. 環境変数設定
+# 3. NumPy バージョン修正（ChromaDB互換性のため）
+poetry run pip install "numpy<2.0"
+
+# 4. 環境変数設定
 cp .env.example .env
 # .envファイルを編集してAPIキーを設定
 
-# 4. 開発サーバー起動
+# 5. 開発サーバー起動
 poetry run python main.py
+```
+
+**pip を使う場合（Poetry なし）:**
+```bash
+# 1. 依存関係インストール
+pip install -r requirements.txt
+
+# 2. 環境変数設定
+cp .env.example .env
+# .envファイルを編集してAPIキーを設定
+
+# 3. 開発サーバー起動
+python main.py
 ```
 
 ### 🎨 初心者向けWebダッシュボード
