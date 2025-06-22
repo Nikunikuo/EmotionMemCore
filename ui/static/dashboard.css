@@ -1,0 +1,296 @@
+/* EmotionMemCore Dashboard 追加スタイル */
+
+/* カスタムアニメーション */
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes glow {
+    0% {
+        box-shadow: 0 0 5px rgba(33, 150, 243, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(33, 150, 243, 0.6);
+    }
+    100% {
+        box-shadow: 0 0 5px rgba(33, 150, 243, 0.3);
+    }
+}
+
+/* ユーティリティクラス */
+.slide-in-right {
+    animation: slideInRight 0.6s ease-out;
+}
+
+.bounce {
+    animation: bounce 1s infinite;
+}
+
+.glow {
+    animation: glow 2s ease-in-out infinite;
+}
+
+/* 特殊なカード */
+.feature-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: rotate(45deg);
+    animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+}
+
+/* インタラクティブ要素 */
+.interactive-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.interactive-card:hover {
+    transform: scale(1.02) translateY(-5px);
+}
+
+.interactive-card:active {
+    transform: scale(0.98);
+}
+
+/* ツールチップ */
+.tooltip-custom {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip-custom .tooltip-text {
+    visibility: hidden;
+    width: 200px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.tooltip-custom:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* プログレスバー */
+.progress-custom {
+    height: 8px;
+    border-radius: 10px;
+    background-color: #e9ecef;
+    overflow: hidden;
+}
+
+.progress-custom .progress-bar {
+    transition: width 1s ease-in-out;
+    border-radius: 10px;
+}
+
+/* メッセージ効果 */
+.typing-indicator {
+    display: inline-block;
+}
+
+.typing-indicator span {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #999;
+    margin: 0 2px;
+    animation: typing 1.4s infinite;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing {
+    0%, 60%, 100% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+    30% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+}
+
+/* 感情カラー */
+.emotion-joy { background: linear-gradient(45deg, #FFD700, #FFA500); }
+.emotion-sadness { background: linear-gradient(45deg, #4682B4, #5F9EA0); }
+.emotion-anger { background: linear-gradient(45deg, #DC143C, #B22222); }
+.emotion-fear { background: linear-gradient(45deg, #8B008B, #4B0082); }
+.emotion-surprise { background: linear-gradient(45deg, #FF1493, #FF6347); }
+.emotion-love { background: linear-gradient(45deg, #FF69B4, #FF1493); }
+.emotion-gratitude { background: linear-gradient(45deg, #32CD32, #228B22); }
+.emotion-hope { background: linear-gradient(45deg, #87CEEB, #4169E1); }
+
+/* レスポンシブ対応 */
+@media (max-width: 576px) {
+    .stats-card {
+        padding: 1rem;
+    }
+    
+    .stats-card .number {
+        font-size: 2rem;
+    }
+    
+    .memory-card {
+        padding: 1rem;
+    }
+    
+    .emotion-tag {
+        font-size: 0.8rem;
+        padding: 0.2rem 0.5rem;
+    }
+    
+    .welcome-card h1 {
+        font-size: 2rem;
+    }
+    
+    .welcome-card p {
+        font-size: 1rem;
+    }
+}
+
+/* ダークモード対応 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --light-bg: #1a1a1a;
+        --dark-text: #e0e0e0;
+    }
+    
+    body {
+        background-color: var(--light-bg);
+        color: var(--dark-text);
+    }
+    
+    .stats-card, .memory-card {
+        background-color: #2d2d2d;
+        color: var(--dark-text);
+    }
+    
+    .form-control {
+        background-color: #3d3d3d;
+        border-color: #555;
+        color: var(--dark-text);
+    }
+    
+    .form-control:focus {
+        background-color: #3d3d3d;
+        border-color: var(--primary-color);
+        color: var(--dark-text);
+    }
+}
+
+/* 印刷対応 */
+@media print {
+    .sidebar,
+    .navbar,
+    .btn,
+    .alert {
+        display: none !important;
+    }
+    
+    .main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .stats-card,
+    .memory-card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+}
+
+/* アクセシビリティ */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* フォーカス表示 */
+.btn:focus,
+.form-control:focus,
+.nav-link:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* 高コントラストモード */
+@media (prefers-contrast: high) {
+    .emotion-tag {
+        border: 2px solid #000;
+        font-weight: bold;
+    }
+    
+    .stats-card,
+    .memory-card {
+        border: 2px solid #000;
+    }
+}

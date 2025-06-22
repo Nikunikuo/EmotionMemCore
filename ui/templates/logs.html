@@ -1,0 +1,687 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<style>
+    .log-container {
+        background-color: #1e1e1e;
+        color: #f0f0f0;
+        font-family: 'Courier New', monospace;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        height: 600px;
+        overflow-y: auto;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        position: relative;
+    }
+
+    .log-line {
+        padding: 0.25rem 0;
+        border-left: 3px solid transparent;
+        padding-left: 0.75rem;
+        margin-bottom: 0.25rem;
+        transition: all 0.3s ease;
+        border-radius: 0.25rem;
+    }
+
+    .log-line:hover {
+        background-color: rgba(255,255,255,0.05);
+    }
+
+    .log-line.level-info {
+        border-left-color: #2196F3;
+        color: #E3F2FD;
+    }
+
+    .log-line.level-warning {
+        border-left-color: #FF9800;
+        color: #FFF3E0;
+        background-color: rgba(255, 152, 0, 0.1);
+    }
+
+    .log-line.level-error {
+        border-left-color: #f44336;
+        color: #FFEBEE;
+        background-color: rgba(244, 67, 54, 0.1);
+    }
+
+    .log-line.level-debug {
+        border-left-color: #9C27B0;
+        color: #F3E5F5;
+    }
+
+    .log-line.level-success {
+        border-left-color: #4CAF50;
+        color: #E8F5E8;
+    }
+
+    .log-timestamp {
+        color: #888;
+        font-size: 0.9rem;
+        margin-right: 0.75rem;
+    }
+
+    .log-level {
+        display: inline-block;
+        width: 60px;
+        text-align: center;
+        font-weight: bold;
+        margin-right: 0.75rem;
+        padding: 0.1rem 0.3rem;
+        border-radius: 0.25rem;
+        font-size: 0.8rem;
+    }
+
+    .log-level.info {
+        background-color: #2196F3;
+        color: white;
+    }
+
+    .log-level.warning {
+        background-color: #FF9800;
+        color: white;
+    }
+
+    .log-level.error {
+        background-color: #f44336;
+        color: white;
+    }
+
+    .log-level.debug {
+        background-color: #9C27B0;
+        color: white;
+    }
+
+    .log-level.success {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    .log-message {
+        word-wrap: break-word;
+        line-height: 1.4;
+    }
+
+    .log-controls {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .log-controls .btn {
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+        animation: pulse 2s infinite;
+    }
+
+    .status-connected {
+        background-color: #4CAF50;
+    }
+
+    .status-disconnected {
+        background-color: #f44336;
+    }
+
+    .log-stats {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+    }
+
+    .log-stat {
+        text-align: center;
+    }
+
+    .log-stat-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        display: block;
+    }
+
+    .log-stat-label {
+        font-size: 0.8rem;
+        color: #888;
+    }
+
+    .filter-tag {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        margin: 0.25rem;
+        border-radius: 1rem;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+    .filter-tag.active {
+        border-color: #2196F3;
+        background-color: rgba(33, 150, 243, 0.1);
+    }
+
+    .filter-tag.info {
+        background-color: rgba(33, 150, 243, 0.2);
+        color: #1976D2;
+    }
+
+    .filter-tag.warning {
+        background-color: rgba(255, 152, 0, 0.2);
+        color: #F57C00;
+    }
+
+    .filter-tag.error {
+        background-color: rgba(244, 67, 54, 0.2);
+        color: #D32F2F;
+    }
+
+    .filter-tag.debug {
+        background-color: rgba(156, 39, 176, 0.2);
+        color: #7B1FA2;
+    }
+
+    .auto-scroll-indicator {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(33, 150, 243, 0.9);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 1rem;
+        font-size: 0.8rem;
+        display: none;
+    }
+
+    .log-search {
+        position: relative;
+        margin-bottom: 1rem;
+    }
+
+    .search-highlight {
+        background-color: #FFFF00;
+        color: #000;
+        padding: 0.1rem 0.2rem;
+        border-radius: 0.2rem;
+    }
+
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .log-line.new {
+        animation: fadeInDown 0.5s ease-out;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="bi bi-terminal text-primary"></i>
+            リアルタイムログ表示
+        </h2>
+        <p class="lead text-muted">
+            EmotionMemCoreのシステムログをリアルタイムで監視できます。
+        </p>
+    </div>
+</div>
+
+<!-- ログコントロール -->
+<div class="log-controls">
+    <div class="row align-items-center">
+        <div class="col-md-6">
+            <h5 class="mb-3">
+                <span id="connectionStatus" class="status-indicator status-disconnected"></span>
+                ログストリーム
+            </h5>
+            <button id="connectBtn" class="btn btn-success" onclick="connectLogs()">
+                <i class="bi bi-play-fill"></i> 接続開始
+            </button>
+            <button id="disconnectBtn" class="btn btn-danger" onclick="disconnectLogs()" disabled>
+                <i class="bi bi-stop-fill"></i> 接続停止
+            </button>
+            <button class="btn btn-secondary" onclick="clearLogs()">
+                <i class="bi bi-trash"></i> ログクリア
+            </button>
+            <button class="btn btn-info" onclick="downloadLogs()">
+                <i class="bi bi-download"></i> ダウンロード
+            </button>
+        </div>
+        <div class="col-md-6">
+            <div class="log-search">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="form-control" 
+                    placeholder="ログを検索..." 
+                    onkeyup="searchLogs()"
+                >
+            </div>
+            <div>
+                <strong>フィルター:</strong>
+                <span class="filter-tag info active" onclick="toggleFilter('info')">INFO</span>
+                <span class="filter-tag warning active" onclick="toggleFilter('warning')">WARNING</span>
+                <span class="filter-tag error active" onclick="toggleFilter('error')">ERROR</span>
+                <span class="filter-tag debug" onclick="toggleFilter('debug')">DEBUG</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ログ表示エリア -->
+<div class="row">
+    <div class="col-lg-9">
+        <div class="log-container" id="logContainer">
+            <div class="text-center text-muted">
+                <i class="bi bi-wifi-off" style="font-size: 3rem;"></i>
+                <p class="mt-2">ログストリームに接続されていません</p>
+                <p class="small">「接続開始」ボタンを押してログ監視を開始してください</p>
+            </div>
+            <div class="auto-scroll-indicator" id="autoScrollIndicator">
+                <i class="bi bi-arrow-down"></i> 自動スクロール中
+            </div>
+        </div>
+    </div>
+    
+    <!-- ログ統計 -->
+    <div class="col-lg-3">
+        <div class="stats-card">
+            <h5 class="mb-3">
+                <i class="bi bi-graph-up text-info"></i>
+                ログ統計
+            </h5>
+            <div class="log-stats">
+                <div class="log-stat">
+                    <span class="log-stat-number text-primary" id="infoCount">0</span>
+                    <span class="log-stat-label">INFO</span>
+                </div>
+                <div class="log-stat">
+                    <span class="log-stat-number text-warning" id="warningCount">0</span>
+                    <span class="log-stat-label">WARNING</span>
+                </div>
+                <div class="log-stat">
+                    <span class="log-stat-number text-danger" id="errorCount">0</span>
+                    <span class="log-stat-label">ERROR</span>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="mt-3">
+                <h6>設定</h6>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="autoScroll" checked>
+                    <label class="form-check-label" for="autoScroll">
+                        自動スクロール
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="showTimestamp" checked>
+                    <label class="form-check-label" for="showTimestamp">
+                        タイムスタンプ表示
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="enableSound">
+                    <label class="form-check-label" for="enableSound">
+                        エラー音通知
+                    </label>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="mt-3">
+                <h6>ログレベル</h6>
+                <select class="form-select form-select-sm" id="logLevel" onchange="changeLogLevel()">
+                    <option value="DEBUG">DEBUG</option>
+                    <option value="INFO" selected>INFO</option>
+                    <option value="WARNING">WARNING</option>
+                    <option value="ERROR">ERROR</option>
+                </select>
+                <div class="form-text">表示する最小ログレベル</div>
+            </div>
+        </div>
+        
+        <!-- 最近のアクティビティ -->
+        <div class="stats-card mt-3">
+            <h6 class="mb-3">
+                <i class="bi bi-activity text-success"></i>
+                最近のアクティビティ
+            </h6>
+            <div id="recentActivity" class="small">
+                <div class="text-muted">アクティビティなし</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // ログ管理の状態
+    let logConnection = null;
+    let logBuffer = [];
+    let logStats = { info: 0, warning: 0, error: 0, debug: 0 };
+    let activeFilters = new Set(['info', 'warning', 'error']);
+    let autoScrollEnabled = true;
+    let searchTerm = '';
+
+    // WebSocket接続（シミュレーション）
+    let logSimulator = null;
+
+    // ログ接続開始
+    function connectLogs() {
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const statusIndicator = document.getElementById('connectionStatus');
+        const logContainer = document.getElementById('logContainer');
+        
+        connectBtn.disabled = true;
+        disconnectBtn.disabled = false;
+        statusIndicator.className = 'status-indicator status-connected';
+        
+        // 初期メッセージ
+        logContainer.innerHTML = '';
+        addLogMessage('INFO', 'ログストリーム接続を開始しました', new Date());
+        
+        // ログシミュレーション開始
+        startLogSimulation();
+        
+        showAlert('ログストリームに接続しました', 'success', 3000);
+    }
+
+    // ログ接続停止
+    function disconnectLogs() {
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const statusIndicator = document.getElementById('connectionStatus');
+        
+        connectBtn.disabled = false;
+        disconnectBtn.disabled = true;
+        statusIndicator.className = 'status-indicator status-disconnected';
+        
+        // ログシミュレーション停止
+        if (logSimulator) {
+            clearInterval(logSimulator);
+            logSimulator = null;
+        }
+        
+        addLogMessage('INFO', 'ログストリーム接続を停止しました', new Date());
+        showAlert('ログストリームを停止しました', 'info', 3000);
+    }
+
+    // ログシミュレーション
+    function startLogSimulation() {
+        const sampleLogs = [
+            { level: 'INFO', message: 'EmotionMemCore API サーバー起動完了', interval: 5000 },
+            { level: 'INFO', message: '新しい記憶保存リクエストを処理中...', interval: 3000 },
+            { level: 'INFO', message: 'Claude APIからの応答を受信', interval: 4000 },
+            { level: 'INFO', message: 'OpenAI Embeddingの生成完了', interval: 3500 },
+            { level: 'INFO', message: 'ChromaDBへの記憶保存が完了', interval: 2500 },
+            { level: 'INFO', message: '記憶検索リクエストを処理中...', interval: 4500 },
+            { level: 'DEBUG', message: 'HTTP リクエスト: POST /save', interval: 2000 },
+            { level: 'DEBUG', message: 'HTTP リクエスト: POST /search', interval: 2200 },
+            { level: 'DEBUG', message: 'LLM処理時間: 1.2秒', interval: 6000 },
+            { level: 'DEBUG', message: 'データベースクエリ実行時間: 0.15秒', interval: 5500 },
+            { level: 'WARNING', message: 'レート制限に近づいています (85%)', interval: 15000 },
+            { level: 'WARNING', message: 'ディスク使用量が80%を超えました', interval: 20000 },
+            { level: 'ERROR', message: 'Claude API タイムアウトエラー', interval: 30000 },
+            { level: 'ERROR', message: 'ChromaDB 接続エラー（再試行中）', interval: 45000 }
+        ];
+
+        let logIndex = 0;
+        
+        logSimulator = setInterval(() => {
+            if (document.getElementById('disconnectBtn').disabled) return;
+            
+            const log = sampleLogs[Math.floor(Math.random() * sampleLogs.length)];
+            const now = new Date();
+            
+            // ランダムにユーザーIDやセッションIDを追加
+            let message = log.message;
+            if (Math.random() > 0.7) {
+                const userId = `user_${Math.floor(Math.random() * 1000)}`;
+                message += ` (${userId})`;
+            }
+            
+            addLogMessage(log.level, message, now);
+            updateRecentActivity(log.level, message);
+            
+        }, Math.random() * 2000 + 1000); // 1-3秒間隔
+    }
+
+    // ログメッセージ追加
+    function addLogMessage(level, message, timestamp) {
+        const logContainer = document.getElementById('logContainer');
+        const showTimestamp = document.getElementById('showTimestamp').checked;
+        
+        // フィルター確認
+        if (!activeFilters.has(level.toLowerCase())) return;
+        
+        // 検索フィルター
+        if (searchTerm && !message.toLowerCase().includes(searchTerm.toLowerCase())) return;
+        
+        // ログ要素作成
+        const logLine = document.createElement('div');
+        logLine.className = `log-line level-${level.toLowerCase()} new`;
+        
+        let timestampStr = '';
+        if (showTimestamp) {
+            timestampStr = `<span class="log-timestamp">${timestamp.toLocaleTimeString('ja-JP')}</span>`;
+        }
+        
+        // 検索ハイライト
+        let highlightedMessage = message;
+        if (searchTerm) {
+            const regex = new RegExp(`(${searchTerm})`, 'gi');
+            highlightedMessage = message.replace(regex, '<span class="search-highlight">$1</span>');
+        }
+        
+        logLine.innerHTML = `
+            ${timestampStr}
+            <span class="log-level ${level.toLowerCase()}">${level}</span>
+            <span class="log-message">${highlightedMessage}</span>
+        `;
+        
+        logContainer.appendChild(logLine);
+        
+        // 統計更新
+        updateLogStats(level);
+        
+        // 音通知
+        if (level === 'ERROR' && document.getElementById('enableSound').checked) {
+            playNotificationSound();
+        }
+        
+        // 自動スクロール
+        if (autoScrollEnabled) {
+            logContainer.scrollTop = logContainer.scrollHeight;
+            document.getElementById('autoScrollIndicator').style.display = 'block';
+        }
+        
+        // アニメーション後にnewクラス削除
+        setTimeout(() => {
+            logLine.classList.remove('new');
+        }, 500);
+        
+        // ログバッファ管理（最大1000行）
+        const logLines = logContainer.children;
+        if (logLines.length > 1000) {
+            logContainer.removeChild(logLines[0]);
+        }
+    }
+
+    // ログ統計更新
+    function updateLogStats(level) {
+        const key = level.toLowerCase();
+        if (logStats[key] !== undefined) {
+            logStats[key]++;
+            document.getElementById(`${key}Count`).textContent = logStats[key];
+        }
+    }
+
+    // 最近のアクティビティ更新
+    function updateRecentActivity(level, message) {
+        const recentActivity = document.getElementById('recentActivity');
+        const timestamp = new Date().toLocaleTimeString('ja-JP');
+        
+        const activityItem = document.createElement('div');
+        activityItem.className = 'mb-2 pb-2 border-bottom';
+        activityItem.innerHTML = `
+            <div class="fw-bold text-${level === 'ERROR' ? 'danger' : level === 'WARNING' ? 'warning' : 'primary'}">
+                ${level}
+            </div>
+            <div class="small text-muted">${timestamp}</div>
+            <div class="small">${message.substring(0, 50)}${message.length > 50 ? '...' : ''}</div>
+        `;
+        
+        recentActivity.insertBefore(activityItem, recentActivity.firstChild);
+        
+        // 最大5件まで
+        const items = recentActivity.children;
+        if (items.length > 5) {
+            recentActivity.removeChild(items[items.length - 1]);
+        }
+    }
+
+    // フィルター切り替え
+    function toggleFilter(level) {
+        const filterTag = document.querySelector(`.filter-tag.${level}`);
+        
+        if (activeFilters.has(level)) {
+            activeFilters.delete(level);
+            filterTag.classList.remove('active');
+        } else {
+            activeFilters.add(level);
+            filterTag.classList.add('active');
+        }
+        
+        refreshLogDisplay();
+    }
+
+    // ログ表示更新
+    function refreshLogDisplay() {
+        const logContainer = document.getElementById('logContainer');
+        const logLines = logContainer.children;
+        
+        for (let line of logLines) {
+            const level = line.className.match(/level-(\w+)/)?.[1];
+            if (level) {
+                const shouldShow = activeFilters.has(level) && 
+                    (!searchTerm || line.textContent.toLowerCase().includes(searchTerm.toLowerCase()));
+                line.style.display = shouldShow ? 'block' : 'none';
+            }
+        }
+    }
+
+    // ログ検索
+    function searchLogs() {
+        searchTerm = document.getElementById('searchInput').value;
+        refreshLogDisplay();
+    }
+
+    // ログクリア
+    function clearLogs() {
+        document.getElementById('logContainer').innerHTML = '';
+        logStats = { info: 0, warning: 0, error: 0, debug: 0 };
+        
+        // 統計リセット
+        document.getElementById('infoCount').textContent = '0';
+        document.getElementById('warningCount').textContent = '0';
+        document.getElementById('errorCount').textContent = '0';
+        
+        // 最近のアクティビティリセット
+        document.getElementById('recentActivity').innerHTML = '<div class="text-muted">アクティビティなし</div>';
+        
+        showAlert('ログをクリアしました', 'success', 2000);
+    }
+
+    // ログダウンロード
+    function downloadLogs() {
+        const logContainer = document.getElementById('logContainer');
+        const logLines = logContainer.children;
+        
+        let logText = 'EmotionMemCore ログエクスポート\n';
+        logText += `エクスポート日時: ${new Date().toLocaleString('ja-JP')}\n`;
+        logText += '=' * 50 + '\n\n';
+        
+        for (let line of logLines) {
+            if (line.style.display !== 'none') {
+                logText += line.textContent + '\n';
+            }
+        }
+        
+        const blob = new Blob([logText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `emotionmemcore_logs_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showAlert('ログをダウンロードしました', 'success', 3000);
+    }
+
+    // 通知音再生
+    function playNotificationSound() {
+        try {
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBjiS2P');
+        } catch (e) {
+            // 音再生失敗時は無視
+        }
+    }
+
+    // 自動スクロール設定
+    document.getElementById('autoScroll').addEventListener('change', function() {
+        autoScrollEnabled = this.checked;
+        document.getElementById('autoScrollIndicator').style.display = 
+            autoScrollEnabled ? 'block' : 'none';
+    });
+
+    // ログレベル変更
+    function changeLogLevel() {
+        const newLevel = document.getElementById('logLevel').value;
+        // 実際の実装では、サーバーサイドのログレベルを変更
+        showAlert(`ログレベルを ${newLevel} に変更しました`, 'info', 3000);
+    }
+
+    // ページ読み込み時の初期化
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初期設定
+        document.getElementById('autoScrollIndicator').style.display = 'none';
+        
+        // スクロール監視
+        document.getElementById('logContainer').addEventListener('scroll', function() {
+            const container = this;
+            const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 1;
+            
+            if (!isScrolledToBottom && autoScrollEnabled) {
+                document.getElementById('autoScrollIndicator').style.display = 'block';
+            } else {
+                document.getElementById('autoScrollIndicator').style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

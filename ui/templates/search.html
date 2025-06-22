@@ -1,0 +1,519 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="bi bi-search text-primary"></i>
+            記憶検索
+        </h2>
+        <p class="lead text-muted">
+            自然言語で過去の記憶を検索できます。感情や期間でのフィルタリングも可能です。
+        </p>
+    </div>
+</div>
+
+<!-- 検索フォーム -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="stats-card">
+            <h4 class="mb-3">
+                <i class="bi bi-search-heart text-success"></i>
+                記憶を検索
+            </h4>
+            
+            <form id="searchForm">
+                <div class="mb-3">
+                    <label for="searchQuery" class="form-label">
+                        <i class="bi bi-chat-text"></i>
+                        検索クエリ
+                    </label>
+                    <textarea 
+                        class="form-control" 
+                        id="searchQuery" 
+                        name="query" 
+                        rows="3" 
+                        placeholder="例: 楽しかった思い出、映画の話、悲しい出来事など..."
+                        required
+                    ></textarea>
+                    <div class="form-text">
+                        自然な日本語で検索したい内容を入力してください
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="userIdSearch" class="form-label">
+                            <i class="bi bi-person"></i>
+                            ユーザーID
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="userIdSearch" 
+                            name="user_id" 
+                            value="all" 
+                            placeholder="特定のユーザーまたは 'all'"
+                        >
+                    </div>
+                    <div class="col-md-6">
+                        <label for="resultLimit" class="form-label">
+                            <i class="bi bi-list-ol"></i>
+                            結果件数
+                        </label>
+                        <select class="form-select" id="resultLimit" name="top_k">
+                            <option value="5">5件</option>
+                            <option value="10" selected>10件</option>
+                            <option value="20">20件</option>
+                            <option value="50">50件</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <label class="form-label">
+                        <i class="bi bi-emoji-smile"></i>
+                        感情フィルター（オプション）
+                    </label>
+                    <div id="emotionFilters" class="mt-2">
+                        {% for emotion in emotions %}
+                        <span class="emotion-filter" data-emotion="{{ emotion }}" onclick="toggleEmotion('{{ emotion }}')">
+                            {{ emotion }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" id="selectedEmotions" name="emotions" value="">
+                    <div class="form-text">
+                        クリックして感情を選択・解除できます（複数選択可）
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-search"></i>
+                        記憶を検索
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="loadSearchSample()">
+                        <i class="bi bi-lightbulb"></i>
+                        サンプル検索
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 検索のヒント -->
+    <div class="col-lg-4">
+        <div class="stats-card">
+            <h5 class="mb-3">
+                <i class="bi bi-lightbulb text-warning"></i>
+                検索のコツ
+            </h5>
+            
+            <div class="mb-3">
+                <h6>🎯 効果的な検索方法</h6>
+                <ul class="small">
+                    <li>具体的なキーワードを含める</li>
+                    <li>感情を表す言葉を使う</li>
+                    <li>時間や場所を含めると良い</li>
+                    <li>複数の単語で検索する</li>
+                </ul>
+            </div>
+            
+            <div class="mb-3">
+                <h6>✨ 検索例</h6>
+                <div class="small">
+                    <div class="search-example" onclick="setSearchExample('楽しかった映画の話')">
+                        "楽しかった映画の話"
+                    </div>
+                    <div class="search-example" onclick="setSearchExample('悲しい気持ちになった出来事')">
+                        "悲しい気持ちになった出来事"
+                    </div>
+                    <div class="search-example" onclick="setSearchExample('友達との思い出')">
+                        "友達との思い出"
+                    </div>
+                    <div class="search-example" onclick="setSearchExample('感謝している人')">
+                        "感謝している人"
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <h6>🎨 感情で絞り込み</h6>
+                <p class="small text-muted">
+                    感情フィルターを使用すると、特定の感情に関連する記憶のみを検索できます。
+                </p>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                <strong>ヒント:</strong> 検索結果は類似度の高い順に表示されます。
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 検索結果表示エリア -->
+<div class="row">
+    <div class="col-12">
+        <div id="searchResults" style="display: none;">
+            <div class="stats-card">
+                <h4 class="mb-3">
+                    <i class="bi bi-journal-bookmark text-success"></i>
+                    検索結果
+                </h4>
+                <div id="searchResultContent"></div>
+            </div>
+        </div>
+        
+        <!-- 検索履歴 -->
+        <div id="searchHistory" class="stats-card mt-4" style="display: none;">
+            <h5 class="mb-3">
+                <i class="bi bi-clock-history text-info"></i>
+                最近の検索
+            </h5>
+            <div id="searchHistoryContent"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .emotion-filter {
+        display: inline-block;
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        color: #495057;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        margin: 0.25rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        user-select: none;
+    }
+    
+    .emotion-filter:hover {
+        background: #e9ecef;
+        border-color: #adb5bd;
+        transform: translateY(-2px);
+    }
+    
+    .emotion-filter.selected {
+        background: linear-gradient(45deg, #FF9800, #FFB74D);
+        border-color: #FF9800;
+        color: white;
+        box-shadow: 0 3px 10px rgba(255, 152, 0, 0.3);
+    }
+    
+    .search-example {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+        margin: 0.25rem 0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .search-example:hover {
+        background: #e9ecef;
+        border-color: #adb5bd;
+        transform: translateX(5px);
+    }
+    
+    .search-result-item {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        border-left: 4px solid #28a745;
+    }
+    
+    .search-result-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .search-score {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.8rem;
+        font-weight: bold;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+    }
+    
+    .search-summary {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+        color: #333;
+    }
+    
+    .search-meta {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #eee;
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .history-item {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-left: 3px solid #007bff;
+    }
+    
+    .history-item:hover {
+        background: #e9ecef;
+        transform: translateX(5px);
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+    
+    .no-results i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let selectedEmotions = new Set();
+    let searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+
+    // 感情フィルター切り替え
+    function toggleEmotion(emotion) {
+        const filterElement = document.querySelector(`[data-emotion="${emotion}"]`);
+        
+        if (selectedEmotions.has(emotion)) {
+            selectedEmotions.delete(emotion);
+            filterElement.classList.remove('selected');
+        } else {
+            selectedEmotions.add(emotion);
+            filterElement.classList.add('selected');
+        }
+        
+        // 隠しフィールド更新
+        document.getElementById('selectedEmotions').value = Array.from(selectedEmotions).join(',');
+    }
+
+    // 検索例設定
+    function setSearchExample(query) {
+        document.getElementById('searchQuery').value = query;
+        showAlert('検索例を設定しました', 'info', 2000);
+    }
+
+    // サンプル検索データ読み込み
+    function loadSearchSample() {
+        const samples = [
+            {
+                query: "楽しい映画鑑賞の思い出",
+                emotions: ["喜び", "楽しさ", "興奮"]
+            },
+            {
+                query: "友達との感動的な会話",
+                emotions: ["感動", "感謝", "愛情"]
+            },
+            {
+                query: "困った時に助けてもらった話",
+                emotions: ["安心", "感謝", "信頼"]
+            }
+        ];
+        
+        const sample = samples[Math.floor(Math.random() * samples.length)];
+        document.getElementById('searchQuery').value = sample.query;
+        
+        // 感情クリア
+        selectedEmotions.clear();
+        document.querySelectorAll('.emotion-filter').forEach(el => {
+            el.classList.remove('selected');
+        });
+        
+        // サンプル感情選択
+        sample.emotions.forEach(emotion => {
+            const filterElement = document.querySelector(`[data-emotion="${emotion}"]`);
+            if (filterElement) {
+                selectedEmotions.add(emotion);
+                filterElement.classList.add('selected');
+            }
+        });
+        
+        document.getElementById('selectedEmotions').value = Array.from(selectedEmotions).join(',');
+        showAlert('サンプル検索データを読み込みました', 'success', 2000);
+    }
+
+    // 検索フォーム送信
+    document.getElementById('searchForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // ローディング状態
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>検索中...';
+        submitBtn.disabled = true;
+        
+        try {
+            const formData = new FormData(e.target);
+            
+            const response = await fetch('/api/search', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                displaySearchResults(result.results, formData.get('query'));
+                addToSearchHistory(formData.get('query'), result.total || 0);
+                showAlert(`${result.total || 0}件の結果が見つかりました`, 'success');
+            } else {
+                showAlert(`検索エラー: ${result.error}`, 'danger');
+            }
+            
+        } catch (error) {
+            showAlert(`通信エラー: ${error.message}`, 'danger');
+        } finally {
+            // ボタン復元
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+
+    // 検索結果表示
+    function displaySearchResults(results, query) {
+        const resultsDiv = document.getElementById('searchResults');
+        const contentDiv = document.getElementById('searchResultContent');
+        
+        if (!results || results.length === 0) {
+            contentDiv.innerHTML = `
+                <div class="no-results">
+                    <i class="bi bi-search"></i>
+                    <h5>検索結果が見つかりませんでした</h5>
+                    <p>別のキーワードや感情フィルターで再度お試しください</p>
+                    <button class="btn btn-primary" onclick="loadSearchSample()">
+                        サンプル検索を試す
+                    </button>
+                </div>
+            `;
+        } else {
+            let html = `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6>検索クエリ: <span class="text-primary">"${query}"</span></h6>
+                    <span class="badge bg-success">${results.length}件の結果</span>
+                </div>
+            `;
+            
+            results.forEach((memory, index) => {
+                const score = memory.score ? (memory.score * 100).toFixed(1) : '未計算';
+                const emotions = memory.emotions || [];
+                const emotionTags = emotions.map(emotion => 
+                    `<span class="emotion-tag">${emotion}</span>`
+                ).join('');
+                
+                html += `
+                    <div class="search-result-item fade-in-up" style="animation-delay: ${index * 0.1}s">
+                        <div class="search-score">類似度: ${score}%</div>
+                        <div class="search-summary">${memory.summary || 'サマリー生成中...'}</div>
+                        <div class="mb-2">${emotionTags}</div>
+                        <div class="search-meta">
+                            <div>
+                                <i class="bi bi-calendar"></i>
+                                ${memory.timestamp ? new Date(memory.timestamp).toLocaleString('ja-JP') : '時刻不明'}
+                            </div>
+                            <div>
+                                <i class="bi bi-person"></i>
+                                ${memory.user_id || '不明'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            contentDiv.innerHTML = html;
+        }
+        
+        resultsDiv.style.display = 'block';
+        resultsDiv.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 検索履歴に追加
+    function addToSearchHistory(query, resultCount) {
+        const historyItem = {
+            query: query,
+            timestamp: new Date().toISOString(),
+            resultCount: resultCount
+        };
+        
+        // 重複削除
+        searchHistory = searchHistory.filter(item => item.query !== query);
+        
+        // 先頭に追加
+        searchHistory.unshift(historyItem);
+        
+        // 最大10件まで
+        if (searchHistory.length > 10) {
+            searchHistory = searchHistory.slice(0, 10);
+        }
+        
+        // ローカルストレージに保存
+        localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+        
+        // 表示更新
+        displaySearchHistory();
+    }
+
+    // 検索履歴表示
+    function displaySearchHistory() {
+        if (searchHistory.length === 0) return;
+        
+        const historyDiv = document.getElementById('searchHistory');
+        const contentDiv = document.getElementById('searchHistoryContent');
+        
+        let html = '';
+        searchHistory.forEach(item => {
+            const date = new Date(item.timestamp).toLocaleString('ja-JP');
+            html += `
+                <div class="history-item" onclick="repeatSearch('${item.query}')">
+                    <div class="fw-bold">${item.query}</div>
+                    <div class="small text-muted">
+                        ${date} - ${item.resultCount}件の結果
+                    </div>
+                </div>
+            `;
+        });
+        
+        contentDiv.innerHTML = html;
+        historyDiv.style.display = 'block';
+    }
+
+    // 検索の再実行
+    function repeatSearch(query) {
+        document.getElementById('searchQuery').value = query;
+        showAlert('検索履歴から設定しました', 'info', 2000);
+    }
+
+    // ページ読み込み時の初期化
+    document.addEventListener('DOMContentLoaded', function() {
+        displaySearchHistory();
+    });
+</script>
+{% endblock %}

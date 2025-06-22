@@ -1,0 +1,934 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="bi bi-graph-up text-primary"></i>
+            記憶可視化ツール
+        </h2>
+        <p class="lead text-muted">
+            保存された記憶の感情分布、時系列変化、関係性を美しいグラフで可視化します。
+        </p>
+    </div>
+</div>
+
+<!-- フィルターコントロール -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="stats-card">
+            <h5 class="mb-3">
+                <i class="bi bi-sliders text-info"></i>
+                表示設定
+            </h5>
+            
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="userFilter" class="form-label">ユーザー</label>
+                    <select class="form-select" id="userFilter" onchange="updateVisualizations()">
+                        <option value="all">全ユーザー</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="periodFilter" class="form-label">期間</label>
+                    <select class="form-select" id="periodFilter" onchange="updateVisualizations()">
+                        <option value="all">全期間</option>
+                        <option value="today">今日</option>
+                        <option value="week">過去1週間</option>
+                        <option value="month">過去1ヶ月</option>
+                        <option value="3month">過去3ヶ月</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="chartType" class="form-label">表示形式</label>
+                    <select class="form-select" id="chartType" onchange="updateChartType()">
+                        <option value="combined">統合表示</option>
+                        <option value="emotion">感情分析</option>
+                        <option value="timeline">時系列分析</option>
+                        <option value="relationship">関係性分析</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="d-flex align-items-end">
+                        <button class="btn btn-primary" onclick="refreshData()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            更新
+                        </button>
+                        <button class="btn btn-success ms-2" onclick="exportChart()">
+                            <i class="bi bi-download"></i>
+                            エクスポート
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- チャート表示エリア -->
+<div id="combinedView">
+    <!-- 統合表示 -->
+    <div class="row">
+        <!-- 感情分布チャート -->
+        <div class="col-lg-6 mb-4">
+            <div class="stats-card">
+                <h5 class="mb-3">
+                    <i class="bi bi-pie-chart text-warning"></i>
+                    感情分布
+                </h5>
+                <div class="chart-container">
+                    <canvas id="emotionDistributionChart" width="400" height="300"></canvas>
+                </div>
+                <div class="chart-legend mt-3" id="emotionLegend"></div>
+            </div>
+        </div>
+        
+        <!-- 時系列チャート -->
+        <div class="col-lg-6 mb-4">
+            <div class="stats-card">
+                <h5 class="mb-3">
+                    <i class="bi bi-graph-up text-success"></i>
+                    時系列変化
+                </h5>
+                <div class="chart-container">
+                    <canvas id="timelineChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- 感情強度ヒートマップ -->
+        <div class="col-lg-8 mb-4">
+            <div class="stats-card">
+                <h5 class="mb-3">
+                    <i class="bi bi-grid text-danger"></i>
+                    感情強度ヒートマップ（日別）
+                </h5>
+                <div class="heatmap-container" id="emotionHeatmap">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary"></div>
+                        <div class="mt-2">データ読み込み中...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 統計サマリー -->
+        <div class="col-lg-4 mb-4">
+            <div class="stats-card">
+                <h5 class="mb-3">
+                    <i class="bi bi-bar-chart text-info"></i>
+                    統計サマリー
+                </h5>
+                <div id="statsSummary">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalMemories">-</div>
+                        <div class="stat-label">総記憶数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="dominantEmotion">-</div>
+                        <div class="stat-label">最頻出感情</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="activeUsers">-</div>
+                        <div class="stat-label">アクティブユーザー</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="avgEmotionPerMemory">-</div>
+                        <div class="stat-label">平均感情数/記憶</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 個別チャート表示エリア（詳細表示用） -->
+<div id="detailView" style="display: none;">
+    <div class="row">
+        <div class="col-12">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 id="detailTitle">詳細表示</h5>
+                    <button class="btn btn-secondary btn-sm" onclick="showCombinedView()">
+                        <i class="bi bi-grid-3x3-gap"></i>
+                        統合表示に戻る
+                    </button>
+                </div>
+                <div class="chart-container-large">
+                    <canvas id="detailChart" width="800" height="400"></canvas>
+                </div>
+                <div id="detailLegend" class="chart-legend mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 関係性ネットワーク表示エリア -->
+<div id="networkView" style="display: none;">
+    <div class="row">
+        <div class="col-12">
+            <div class="stats-card">
+                <h5 class="mb-3">
+                    <i class="bi bi-diagram-3 text-purple"></i>
+                    記憶関係性ネットワーク
+                </h5>
+                <div class="network-container" id="networkContainer">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary"></div>
+                        <div class="mt-2">ネットワーク生成中...</div>
+                    </div>
+                </div>
+                <div class="network-controls mt-3">
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-primary" onclick="zoomNetwork('in')">
+                            <i class="bi bi-zoom-in"></i>
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="zoomNetwork('out')">
+                            <i class="bi bi-zoom-out"></i>
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="resetNetworkView()">
+                            <i class="bi bi-house"></i>
+                        </button>
+                    </div>
+                    <div class="ms-3 d-inline-block">
+                        <label for="nodeSize" class="form-label me-2">ノードサイズ:</label>
+                        <input type="range" class="form-range d-inline-block" 
+                               id="nodeSize" min="1" max="10" value="5" 
+                               style="width: 100px;" onchange="updateNodeSize()">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+    
+    .chart-container-large {
+        position: relative;
+        height: 400px;
+        width: 100%;
+    }
+    
+    .chart-legend {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        background: #f8f9fa;
+        font-size: 0.8rem;
+    }
+    
+    .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+    }
+    
+    .heatmap-container {
+        min-height: 200px;
+        position: relative;
+    }
+    
+    .heatmap-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 2px;
+        margin-top: 1rem;
+    }
+    
+    .heatmap-cell {
+        aspect-ratio: 1;
+        border-radius: 0.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: bold;
+        color: white;
+        text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .heatmap-cell:hover {
+        transform: scale(1.1);
+        z-index: 10;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    
+    .heatmap-labels {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 2px;
+        margin-bottom: 0.5rem;
+        text-align: center;
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .network-container {
+        min-height: 500px;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        position: relative;
+        background: #f8f9fa;
+    }
+    
+    .network-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 0.75rem;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #007bff;
+        display: block;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 0.5rem;
+    }
+    
+    .emotion-intensity-0 { background-color: #f8f9fa; }
+    .emotion-intensity-1 { background-color: #e3f2fd; }
+    .emotion-intensity-2 { background-color: #bbdefb; }
+    .emotion-intensity-3 { background-color: #90caf9; }
+    .emotion-intensity-4 { background-color: #64b5f6; }
+    .emotion-intensity-5 { background-color: #42a5f5; }
+    .emotion-intensity-6 { background-color: #2196f3; }
+    .emotion-intensity-7 { background-color: #1e88e5; }
+    .emotion-intensity-8 { background-color: #1976d2; }
+    .emotion-intensity-9 { background-color: #1565c0; }
+    .emotion-intensity-10 { background-color: #0d47a1; }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .fade-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+<script>
+    // グローバル変数
+    let memoriesData = [];
+    let charts = {};
+    let currentView = 'combined';
+    
+    // Chart.jsの日本語化
+    Chart.defaults.font.family = "'Helvetica Neue', 'Arial', 'Hiragino Sans', 'Meiryo', sans-serif";
+    
+    // カラーパレット
+    const emotionColors = {
+        '喜び': '#FF6B35', '幸せ': '#F7931E', '興奮': '#FFB100',
+        '愛情': '#FF1744', '感謝': '#E91E63', '希望': '#9C27B0',
+        '誇り': '#673AB7', '安心': '#3F51B5', '満足': '#2196F3',
+        '楽しさ': '#03A9F4', '自信': '#00BCD4', '感動': '#009688',
+        '悲しみ': '#607D8B', '怒り': '#795548', '恐れ': '#9E9E9E',
+        '不安': '#757575', '苛立ち': '#424242', '失望': '#212121',
+        '孤独': '#37474F', '罪悪感': '#455A64', '恥': '#546E7A',
+        '後悔': '#78909C', '嫉妬': '#90A4AE', '驚き': '#FFE082',
+        '好奇心': '#FFCC02', '困惑': '#FF8F00', '懐かしさ': '#FF6F00',
+        '共感': '#4CAF50', '同情': '#8BC34A', '期待': '#CDDC39',
+        'いたずら心': '#FFEB3B', '恥ずかしさ': '#FFC107', '決意': '#FF9800',
+        '再会': '#FF5722', '別れ': '#F44336', '励まし': '#E53935',
+        '支え': '#D32F2F', '信頼': '#C62828'
+    };
+    
+    // ページ読み込み時の初期化
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeVisualization();
+    });
+    
+    // 初期化
+    async function initializeVisualization() {
+        showLoading();
+        await loadMemoriesData();
+        await loadUserList();
+        updateVisualizations();
+    }
+    
+    // 記憶データ読み込み
+    async function loadMemoriesData() {
+        try {
+            const response = await fetch('/api/memories?limit=1000');
+            const result = await response.json();
+            
+            if (result.success) {
+                memoriesData = result.memories || [];
+                console.log(`${memoriesData.length}件の記憶データを読み込みました`);
+            } else {
+                showError('記憶データの読み込みに失敗しました');
+            }
+        } catch (error) {
+            showError(`通信エラー: ${error.message}`);
+        }
+    }
+    
+    // ユーザー一覧読み込み
+    async function loadUserList() {
+        const users = [...new Set(memoriesData.map(m => m.user_id))];
+        const userFilter = document.getElementById('userFilter');
+        
+        // 既存のオプションをクリア（"全ユーザー"以外）
+        while (userFilter.children.length > 1) {
+            userFilter.removeChild(userFilter.lastChild);
+        }
+        
+        // ユーザーオプション追加
+        users.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user;
+            option.textContent = user;
+            userFilter.appendChild(option);
+        });
+    }
+    
+    // データフィルタリング
+    function getFilteredData() {
+        const userFilter = document.getElementById('userFilter').value;
+        const periodFilter = document.getElementById('periodFilter').value;
+        
+        let filtered = memoriesData;
+        
+        // ユーザーフィルター
+        if (userFilter !== 'all') {
+            filtered = filtered.filter(m => m.user_id === userFilter);
+        }
+        
+        // 期間フィルター
+        if (periodFilter !== 'all') {
+            const now = new Date();
+            let startDate;
+            
+            switch (periodFilter) {
+                case 'today':
+                    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    break;
+                case 'week':
+                    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    break;
+                case 'month':
+                    startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    break;
+                case '3month':
+                    startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+                    break;
+            }
+            
+            if (startDate) {
+                filtered = filtered.filter(m => new Date(m.timestamp) >= startDate);
+            }
+        }
+        
+        return filtered;
+    }
+    
+    // 可視化更新
+    function updateVisualizations() {
+        const chartType = document.getElementById('chartType').value;
+        
+        if (chartType === 'combined') {
+            showCombinedView();
+        } else {
+            showDetailView(chartType);
+        }
+    }
+    
+    // 統合表示
+    function showCombinedView() {
+        currentView = 'combined';
+        document.getElementById('combinedView').style.display = 'block';
+        document.getElementById('detailView').style.display = 'none';
+        document.getElementById('networkView').style.display = 'none';
+        
+        const filteredData = getFilteredData();
+        
+        createEmotionDistributionChart(filteredData);
+        createTimelineChart(filteredData);
+        createEmotionHeatmap(filteredData);
+        updateStatsSummary(filteredData);
+    }
+    
+    // 詳細表示
+    function showDetailView(type) {
+        currentView = 'detail';
+        document.getElementById('combinedView').style.display = 'none';
+        document.getElementById('detailView').style.display = 'block';
+        document.getElementById('networkView').style.display = 'none';
+        
+        const filteredData = getFilteredData();
+        
+        switch (type) {
+            case 'emotion':
+                document.getElementById('detailTitle').textContent = '感情分析 - 詳細表示';
+                createDetailEmotionChart(filteredData);
+                break;
+            case 'timeline':
+                document.getElementById('detailTitle').textContent = '時系列分析 - 詳細表示';
+                createDetailTimelineChart(filteredData);
+                break;
+            case 'relationship':
+                showNetworkView(filteredData);
+                break;
+        }
+    }
+    
+    // ネットワーク表示
+    function showNetworkView(data) {
+        document.getElementById('combinedView').style.display = 'none';
+        document.getElementById('detailView').style.display = 'none';
+        document.getElementById('networkView').style.display = 'block';
+        
+        createRelationshipNetwork(data);
+    }
+    
+    // 感情分布チャート作成
+    function createEmotionDistributionChart(data) {
+        const ctx = document.getElementById('emotionDistributionChart').getContext('2d');
+        
+        // 感情カウント
+        const emotionCounts = {};
+        data.forEach(memory => {
+            if (memory.emotions) {
+                memory.emotions.forEach(emotion => {
+                    emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
+                });
+            }
+        });
+        
+        // 上位10感情
+        const sortedEmotions = Object.entries(emotionCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
+        
+        const labels = sortedEmotions.map(([emotion]) => emotion);
+        const values = sortedEmotions.map(([, count]) => count);
+        const colors = labels.map(emotion => emotionColors[emotion] || '#999999');
+        
+        // 既存チャート破棄
+        if (charts.emotionDistribution) {
+            charts.emotionDistribution.destroy();
+        }
+        
+        charts.emotionDistribution = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: colors,
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = values.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return `${context.label}: ${context.parsed}回 (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // カスタム凡例作成
+        createLegend('emotionLegend', labels, colors, values);
+    }
+    
+    // 時系列チャート作成
+    function createTimelineChart(data) {
+        const ctx = document.getElementById('timelineChart').getContext('2d');
+        
+        // 日別データ集計
+        const dailyData = {};
+        data.forEach(memory => {
+            const date = new Date(memory.timestamp).toLocaleDateString('ja-JP');
+            dailyData[date] = (dailyData[date] || 0) + 1;
+        });
+        
+        // 過去30日のデータを生成
+        const dates = [];
+        const counts = [];
+        const now = new Date();
+        
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+            const dateStr = date.toLocaleDateString('ja-JP');
+            dates.push(date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' }));
+            counts.push(dailyData[dateStr] || 0);
+        }
+        
+        // 既存チャート破棄
+        if (charts.timeline) {
+            charts.timeline.destroy();
+        }
+        
+        charts.timeline = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: '記憶数',
+                    data: counts,
+                    borderColor: '#2196F3',
+                    backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#2196F3',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // 感情ヒートマップ作成
+    function createEmotionHeatmap(data) {
+        const container = document.getElementById('emotionHeatmap');
+        
+        // 日別感情強度計算
+        const dailyEmotions = {};
+        const now = new Date();
+        
+        // 過去7週間のデータを初期化
+        for (let week = 6; week >= 0; week--) {
+            for (let day = 0; day < 7; day++) {
+                const date = new Date(now.getTime() - (week * 7 + day) * 24 * 60 * 60 * 1000);
+                const dateStr = date.toLocaleDateString('ja-JP');
+                dailyEmotions[dateStr] = { count: 0, emotions: [] };
+            }
+        }
+        
+        // データ集計
+        data.forEach(memory => {
+            const dateStr = new Date(memory.timestamp).toLocaleDateString('ja-JP');
+            if (dailyEmotions[dateStr]) {
+                dailyEmotions[dateStr].count++;
+                if (memory.emotions) {
+                    dailyEmotions[dateStr].emotions.push(...memory.emotions);
+                }
+            }
+        });
+        
+        // ヒートマップHTML生成
+        const dayLabels = ['日', '月', '火', '水', '木', '金', '土'];
+        let html = '<div class="heatmap-labels">';
+        dayLabels.forEach(label => {
+            html += `<div>${label}</div>`;
+        });
+        html += '</div><div class="heatmap-grid">';
+        
+        const sortedDates = Object.keys(dailyEmotions).sort((a, b) => new Date(a) - new Date(b));
+        
+        sortedDates.forEach(dateStr => {
+            const dayData = dailyEmotions[dateStr];
+            const intensity = Math.min(10, dayData.count);
+            const date = new Date(dateStr);
+            const dayLabel = date.getDate();
+            
+            html += `
+                <div class="heatmap-cell emotion-intensity-${intensity}" 
+                     title="${dateStr}: ${dayData.count}件の記憶"
+                     onclick="showDayDetail('${dateStr}')">
+                    ${dayLabel}
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+    }
+    
+    // 統計サマリー更新
+    function updateStatsSummary(data) {
+        const totalMemories = data.length;
+        
+        // 感情カウント
+        const emotionCounts = {};
+        let totalEmotions = 0;
+        
+        data.forEach(memory => {
+            if (memory.emotions) {
+                totalEmotions += memory.emotions.length;
+                memory.emotions.forEach(emotion => {
+                    emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
+                });
+            }
+        });
+        
+        // 最頻出感情
+        const dominantEmotion = Object.entries(emotionCounts)
+            .sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
+        
+        // アクティブユーザー数
+        const activeUsers = new Set(data.map(m => m.user_id)).size;
+        
+        // 平均感情数
+        const avgEmotionPerMemory = totalMemories > 0 ? 
+            (totalEmotions / totalMemories).toFixed(1) : 0;
+        
+        // 表示更新
+        document.getElementById('totalMemories').textContent = totalMemories;
+        document.getElementById('dominantEmotion').textContent = dominantEmotion;
+        document.getElementById('activeUsers').textContent = activeUsers;
+        document.getElementById('avgEmotionPerMemory').textContent = avgEmotionPerMemory;
+    }
+    
+    // 関係性ネットワーク作成
+    function createRelationshipNetwork(data) {
+        const container = document.getElementById('networkContainer');
+        
+        // シンプルなネットワーク表示（実際の実装ではD3.jsなどを使用）
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <h6>記憶関係性ネットワーク</h6>
+                <div class="network-placeholder">
+                    <div class="d-flex justify-content-center align-items-center" style="height: 400px;">
+                        <div class="text-muted">
+                            <i class="bi bi-diagram-3" style="font-size: 4rem;"></i>
+                            <p class="mt-3">ネットワーク可視化機能</p>
+                            <p class="small">記憶間の関係性をグラフで表示します</p>
+                            <button class="btn btn-primary" onclick="generateMockNetwork()">
+                                デモネットワークを生成
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // モックネットワーク生成
+    function generateMockNetwork() {
+        const container = document.getElementById('networkContainer');
+        
+        // 簡易ネットワーク表示
+        container.innerHTML = `
+            <div class="text-center py-3">
+                <div class="network-demo">
+                    <svg width="100%" height="400" viewBox="0 0 600 400">
+                        <!-- ノード -->
+                        <circle cx="100" cy="200" r="20" fill="#FF6B35" opacity="0.8">
+                            <title>喜び (15回)</title>
+                        </circle>
+                        <circle cx="200" cy="100" r="15" fill="#2196F3" opacity="0.8">
+                            <title>安心 (8回)</title>
+                        </circle>
+                        <circle cx="300" cy="200" r="25" fill="#4CAF50" opacity="0.8">
+                            <title>感謝 (20回)</title>
+                        </circle>
+                        <circle cx="400" cy="150" r="12" fill="#FF9800" opacity="0.8">
+                            <title>決意 (5回)</title>
+                        </circle>
+                        <circle cx="500" cy="250" r="18" fill="#9C27B0" opacity="0.8">
+                            <title>希望 (12回)</title>
+                        </circle>
+                        
+                        <!-- エッジ -->
+                        <line x1="100" y1="200" x2="200" y2="100" stroke="#999" stroke-width="2" opacity="0.6"></line>
+                        <line x1="100" y1="200" x2="300" y2="200" stroke="#999" stroke-width="4" opacity="0.8"></line>
+                        <line x1="300" y1="200" x2="400" y2="150" stroke="#999" stroke-width="2" opacity="0.6"></line>
+                        <line x1="300" y1="200" x2="500" y2="250" stroke="#999" stroke-width="3" opacity="0.7"></line>
+                        
+                        <!-- ラベル -->
+                        <text x="100" y="240" text-anchor="middle" font-size="12" fill="#333">喜び</text>
+                        <text x="200" y="80" text-anchor="middle" font-size="12" fill="#333">安心</text>
+                        <text x="300" y="240" text-anchor="middle" font-size="12" fill="#333">感謝</text>
+                        <text x="400" y="130" text-anchor="middle" font-size="12" fill="#333">決意</text>
+                        <text x="500" y="230" text-anchor="middle" font-size="12" fill="#333">希望</text>
+                    </svg>
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        ノードサイズ：感情の出現頻度 | 線の太さ：感情間の関係強度
+                    </small>
+                </div>
+            </div>
+        `;
+    }
+    
+    // 凡例作成
+    function createLegend(containerId, labels, colors, values) {
+        const container = document.getElementById(containerId);
+        let html = '';
+        
+        labels.forEach((label, index) => {
+            html += `
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: ${colors[index]};"></div>
+                    <span>${label} (${values[index]})</span>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    // チャートタイプ変更
+    function updateChartType() {
+        updateVisualizations();
+    }
+    
+    // データ更新
+    async function refreshData() {
+        showLoading();
+        await loadMemoriesData();
+        await loadUserList();
+        updateVisualizations();
+        showAlert('データを更新しました', 'success', 2000);
+    }
+    
+    // チャートエクスポート
+    function exportChart() {
+        const chartType = document.getElementById('chartType').value;
+        let canvas;
+        
+        if (chartType === 'combined') {
+            canvas = document.getElementById('emotionDistributionChart');
+        } else {
+            canvas = document.getElementById('detailChart');
+        }
+        
+        if (canvas) {
+            const url = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `emotion_chart_${new Date().toISOString().slice(0, 10)}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            showAlert('チャートをエクスポートしました', 'success', 2000);
+        }
+    }
+    
+    // 日別詳細表示
+    function showDayDetail(dateStr) {
+        const filteredData = getFilteredData();
+        const dayMemories = filteredData.filter(m => 
+            new Date(m.timestamp).toLocaleDateString('ja-JP') === dateStr
+        );
+        
+        if (dayMemories.length === 0) {
+            showAlert('この日の記憶はありません', 'info', 2000);
+            return;
+        }
+        
+        let message = `${dateStr}の記憶 (${dayMemories.length}件):\n\n`;
+        dayMemories.slice(0, 3).forEach((memory, index) => {
+            message += `${index + 1}. ${memory.summary}\n`;
+            if (memory.emotions) {
+                message += `   感情: ${memory.emotions.join(', ')}\n`;
+            }
+            message += '\n';
+        });
+        
+        if (dayMemories.length > 3) {
+            message += `... 他${dayMemories.length - 3}件`;
+        }
+        
+        alert(message);
+    }
+    
+    // ネットワーク操作
+    function zoomNetwork(direction) {
+        showAlert(`ネットワーク${direction === 'in' ? '拡大' : '縮小'}`, 'info', 1000);
+    }
+    
+    function resetNetworkView() {
+        showAlert('ネットワーク表示をリセット', 'info', 1000);
+    }
+    
+    function updateNodeSize() {
+        const size = document.getElementById('nodeSize').value;
+        showAlert(`ノードサイズ: ${size}`, 'info', 1000);
+    }
+    
+    // ローディング表示
+    function showLoading() {
+        const containers = ['emotionHeatmap'];
+        containers.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary"></div>
+                        <div class="mt-2">データ読み込み中...</div>
+                    </div>
+                `;
+            }
+        });
+    }
+    
+    // エラー表示
+    function showError(message) {
+        showAlert(message, 'danger');
+    }
+</script>
+{% endblock %}

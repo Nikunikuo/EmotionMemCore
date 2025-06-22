@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="bi bi-gear text-primary"></i>
+            機能テスト
+        </h2>
+        <p class="lead text-muted">
+            EmotionMemCoreの機能を簡単にテストできます。初心者の方でも安心してお試しください。
+        </p>
+    </div>
+</div>
+
+<!-- テスト記憶保存 -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="stats-card">
+            <h4 class="mb-3">
+                <i class="bi bi-plus-circle text-success"></i>
+                記憶保存テスト
+            </h4>
+            <p class="text-muted mb-4">
+                ユーザーとAIの会話を入力して、記憶として保存してみましょう。
+                感情分析と要約が自動で生成されます。
+            </p>
+            
+            <form id="testSaveForm">
+                <div class="mb-3">
+                    <label for="userMessage" class="form-label">
+                        <i class="bi bi-person-fill"></i>
+                        ユーザーメッセージ
+                    </label>
+                    <textarea 
+                        class="form-control" 
+                        id="userMessage" 
+                        name="user_message" 
+                        rows="3" 
+                        placeholder="例: 今日はとても良い天気ですね！散歩に行こうかな。"
+                        required
+                    ></textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="aiMessage" class="form-label">
+                        <i class="bi bi-robot"></i>
+                        AI応答メッセージ
+                    </label>
+                    <textarea 
+                        class="form-control" 
+                        id="aiMessage" 
+                        name="ai_message" 
+                        rows="3" 
+                        placeholder="例: 本当にいい天気ですね！散歩は気持ちが良さそうです。どちらに行かれますか？"
+                        required
+                    ></textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="userId" class="form-label">
+                        <i class="bi bi-person-badge"></i>
+                        ユーザーID
+                    </label>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        id="userId" 
+                        name="user_id" 
+                        value="test_user_001" 
+                        placeholder="test_user_001"
+                    >
+                    <div class="form-text">
+                        テスト用のユーザーIDです。自由に変更できます。
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="bi bi-save"></i>
+                    記憶を保存してテスト
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- サンプルデータ -->
+    <div class="col-lg-4">
+        <div class="stats-card">
+            <h5 class="mb-3">
+                <i class="bi bi-lightbulb text-warning"></i>
+                サンプルデータ
+            </h5>
+            <p class="small text-muted mb-3">
+                以下のボタンをクリックすると、サンプルデータが入力されます。
+            </p>
+            
+            <div class="d-grid gap-2">
+                <button class="btn btn-outline-primary btn-sm" onclick="loadSample(1)">
+                    😊 楽しい会話
+                </button>
+                <button class="btn btn-outline-primary btn-sm" onclick="loadSample(2)">
+                    😢 悲しい話
+                </button>
+                <button class="btn btn-outline-primary btn-sm" onclick="loadSample(3)">
+                    😮 驚きの出来事
+                </button>
+                <button class="btn btn-outline-primary btn-sm" onclick="loadSample(4)">
+                    ❤️ 感謝の気持ち
+                </button>
+            </div>
+            
+            <hr>
+            
+            <h6 class="mb-2">
+                <i class="bi bi-info-circle"></i>
+                ヒント
+            </h6>
+            <ul class="small text-muted">
+                <li>感情豊かな内容ほど、より詳細な分析結果が得られます</li>
+                <li>日本語の文章で最良の結果が得られます</li>
+                <li>短すぎる文章よりも、適度な長さの方が良い結果になります</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- テスト結果表示エリア -->
+<div class="row">
+    <div class="col-12">
+        <div id="testResults" style="display: none;">
+            <div class="stats-card">
+                <h4 class="mb-3">
+                    <i class="bi bi-check-circle text-success"></i>
+                    テスト結果
+                </h4>
+                <div id="testResultContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- システム接続テスト -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="stats-card">
+            <h4 class="mb-3">
+                <i class="bi bi-wifi text-info"></i>
+                システム接続テスト
+            </h4>
+            <p class="text-muted mb-4">
+                EmotionMemCoreの各コンポーネントが正常に動作しているかチェックします。
+            </p>
+            
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <button class="btn btn-outline-info w-100" onclick="testConnection()">
+                        <i class="bi bi-arrow-repeat"></i>
+                        接続テスト
+                    </button>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <button class="btn btn-outline-info w-100" onclick="testHealth()">
+                        <i class="bi bi-heart-pulse"></i>
+                        ヘルスチェック
+                    </button>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <button class="btn btn-outline-info w-100" onclick="testSearch()">
+                        <i class="bi bi-search"></i>
+                        検索テスト
+                    </button>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <button class="btn btn-outline-info w-100" onclick="testMemories()">
+                        <i class="bi bi-journal"></i>
+                        記憶一覧テスト
+                    </button>
+                </div>
+            </div>
+            
+            <div id="systemTestResults" class="mt-4"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // サンプルデータ
+    const samples = {
+        1: {
+            user: "今日は友達と映画を見に行きました！とても面白くて、みんなで大笑いしました。",
+            ai: "映画鑑賞、楽しそうですね！どんなジャンルの映画だったんですか？友達と一緒だと更に楽しくなりますよね。",
+            user_id: "happy_user"
+        },
+        2: {
+            user: "ペットが亡くなってしまって、とても悲しいです...",
+            ai: "お辛いお気持ち、お察しします。ペットとの別れはとても辛いものですね。きっと素敵な思い出がたくさんあったことでしょう。",
+            user_id: "sad_user"
+        },
+        3: {
+            user: "まさか宝くじが当たるなんて！信じられません！",
+            ai: "わあ、おめでとうございます！宝くじが当たるなんて本当に驚きですね。きっと良いことに使われることでしょう。",
+            user_id: "surprised_user"
+        },
+        4: {
+            user: "いつもサポートしてくれて、本当にありがとうございます。感謝の気持ちでいっぱいです。",
+            ai: "こちらこそ、いつもありがとうございます。お役に立てて嬉しいです。これからもよろしくお願いします。",
+            user_id: "grateful_user"
+        }
+    };
+
+    // サンプルデータ読み込み
+    function loadSample(index) {
+        const sample = samples[index];
+        if (sample) {
+            document.getElementById('userMessage').value = sample.user;
+            document.getElementById('aiMessage').value = sample.ai;
+            document.getElementById('userId').value = sample.user_id;
+            
+            showAlert('サンプルデータを読み込みました', 'info', 2000);
+        }
+    }
+
+    // 記憶保存テスト
+    document.getElementById('testSaveForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // ローディング状態
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>テスト実行中...';
+        submitBtn.disabled = true;
+        
+        try {
+            const formData = new FormData(e.target);
+            
+            const response = await fetch('/api/test-save', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showTestResult(result);
+                showAlert('記憶保存テストが成功しました！', 'success');
+                
+                // フォームリセット
+                e.target.reset();
+                document.getElementById('userId').value = 'test_user_001';
+            } else {
+                showAlert(`テストエラー: ${result.error}`, 'danger');
+            }
+            
+        } catch (error) {
+            showAlert(`通信エラー: ${error.message}`, 'danger');
+        } finally {
+            // ボタン復元
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+
+    // テスト結果表示
+    function showTestResult(result) {
+        const resultDiv = document.getElementById('testResults');
+        const contentDiv = document.getElementById('testResultContent');
+        
+        if (result.result) {
+            const emotions = result.result.emotions || [];
+            const emotionTags = emotions.map(emotion => 
+                `<span class="emotion-tag">${emotion}</span>`
+            ).join('');
+            
+            contentDiv.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-key"></i> 記憶ID</h6>
+                        <p class="text-muted"><code>${result.result.memory_id || 'N/A'}</code></p>
+                        
+                        <h6><i class="bi bi-journal-text"></i> 自動生成された要約</h6>
+                        <p class="bg-light p-3 rounded">${result.result.summary || '要約を生成中...'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-emoji-smile"></i> 検出された感情</h6>
+                        <div class="mb-3">${emotionTags || '<span class="text-muted">感情分析中...</span>'}</div>
+                        
+                        <h6><i class="bi bi-info-circle"></i> 結果メッセージ</h6>
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i>
+                            ${result.message}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3 p-3 bg-info bg-opacity-10 rounded">
+                    <h6><i class="bi bi-lightbulb"></i> 次のステップ</h6>
+                    <ul class="mb-0">
+                        <li><a href="/search">記憶検索ページ</a>で、今保存した記憶を検索してみましょう</li>
+                        <li><a href="/memories">記憶管理ページ</a>で、保存された記憶の一覧を確認できます</li>
+                        <li>より多くのテストデータで、感情分析の精度を確認してみてください</li>
+                    </ul>
+                </div>
+            `;
+        } else {
+            contentDiv.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    詳細な結果情報が取得できませんでしたが、処理は成功しました。
+                </div>
+            `;
+        }
+        
+        resultDiv.style.display = 'block';
+        resultDiv.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // システム接続テスト
+    async function testConnection() {
+        showSystemTestResult('接続テスト中...', 'info');
+        
+        try {
+            const response = await fetch('http://localhost:8000/');
+            if (response.ok) {
+                showSystemTestResult('✅ API サーバーへの接続が成功しました', 'success');
+            } else {
+                showSystemTestResult(`❌ 接続エラー: HTTP ${response.status}`, 'danger');
+            }
+        } catch (error) {
+            showSystemTestResult(`❌ 接続失敗: ${error.message}`, 'danger');
+        }
+    }
+
+    async function testHealth() {
+        showSystemTestResult('ヘルスチェック実行中...', 'info');
+        
+        try {
+            const response = await fetch('http://localhost:8000/health/');
+            const data = await response.json();
+            
+            if (data.status === 'healthy') {
+                showSystemTestResult('✅ システムは正常に動作しています', 'success');
+            } else {
+                showSystemTestResult(`⚠️ システム状態: ${data.status}`, 'warning');
+            }
+        } catch (error) {
+            showSystemTestResult(`❌ ヘルスチェック失敗: ${error.message}`, 'danger');
+        }
+    }
+
+    async function testSearch() {
+        showSystemTestResult('検索機能テスト中...', 'info');
+        
+        try {
+            const response = await fetch('http://localhost:8000/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    query: 'テスト',
+                    user_id: 'test_user',
+                    top_k: 1
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                showSystemTestResult(`✅ 検索機能が正常です (${data.results?.length || 0}件の結果)`, 'success');
+            } else {
+                showSystemTestResult(`❌ 検索テスト失敗: HTTP ${response.status}`, 'danger');
+            }
+        } catch (error) {
+            showSystemTestResult(`❌ 検索テスト失敗: ${error.message}`, 'danger');
+        }
+    }
+
+    async function testMemories() {
+        showSystemTestResult('記憶一覧テスト中...', 'info');
+        
+        try {
+            const response = await fetch('http://localhost:8000/memories?user_id=test_user&limit=1');
+            
+            if (response.ok) {
+                const data = await response.json();
+                showSystemTestResult(`✅ 記憶一覧機能が正常です (${data.memories?.length || 0}件)`, 'success');
+            } else {
+                showSystemTestResult(`❌ 記憶一覧テスト失敗: HTTP ${response.status}`, 'danger');
+            }
+        } catch (error) {
+            showSystemTestResult(`❌ 記憶一覧テスト失敗: ${error.message}`, 'danger');
+        }
+    }
+
+    function showSystemTestResult(message, type) {
+        const resultsDiv = document.getElementById('systemTestResults');
+        const alertClass = type === 'success' ? 'alert-success' : 
+                          type === 'warning' ? 'alert-warning' : 
+                          type === 'danger' ? 'alert-danger' : 'alert-info';
+        
+        resultsDiv.innerHTML = `
+            <div class="alert ${alertClass}">
+                ${message}
+            </div>
+        `;
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,856 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="bi bi-journal-bookmark text-primary"></i>
+            記憶管理
+        </h2>
+        <p class="lead text-muted">
+            保存された記憶の一覧表示・管理ができます。感情や期間でフィルタリングも可能です。
+        </p>
+    </div>
+</div>
+
+<!-- フィルターコントロール -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="stats-card">
+            <h5 class="mb-3">
+                <i class="bi bi-funnel text-info"></i>
+                フィルターと表示設定
+            </h5>
+            
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="userFilter" class="form-label">ユーザー</label>
+                    <select class="form-select" id="userFilter" onchange="applyFilters()">
+                        <option value="all">全ユーザー</option>
+                        <option value="test_user_001">test_user_001</option>
+                        <option value="happy_user">happy_user</option>
+                        <option value="sad_user">sad_user</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="emotionFilter" class="form-label">感情</label>
+                    <select class="form-select" id="emotionFilter" onchange="applyFilters()">
+                        <option value="">全ての感情</option>
+                        <option value="喜び">喜び</option>
+                        <option value="悲しみ">悲しみ</option>
+                        <option value="興奮">興奮</option>
+                        <option value="感謝">感謝</option>
+                        <option value="安心">安心</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="sortBy" class="form-label">並び順</label>
+                    <select class="form-select" id="sortBy" onchange="applyFilters()">
+                        <option value="newest">新しい順</option>
+                        <option value="oldest">古い順</option>
+                        <option value="emotion">感情別</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="viewMode" class="form-label">表示モード</label>
+                    <select class="form-select" id="viewMode" onchange="changeViewMode()">
+                        <option value="card">カード表示</option>
+                        <option value="list">リスト表示</option>
+                        <option value="timeline">タイムライン表示</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <button class="btn btn-primary" onclick="loadMemories()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        更新
+                    </button>
+                    <button class="btn btn-success" onclick="exportMemories()">
+                        <i class="bi bi-download"></i>
+                        エクスポート
+                    </button>
+                    <button class="btn btn-info" onclick="showStats()">
+                        <i class="bi bi-graph-up"></i>
+                        統計表示
+                    </button>
+                </div>
+                <div class="col-md-6 text-end">
+                    <span id="memoryCount" class="text-muted">読み込み中...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 記憶一覧表示エリア -->
+<div class="row">
+    <div class="col-12">
+        <div id="memoriesContainer">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">読み込み中...</span>
+                </div>
+                <div class="mt-3">記憶を読み込み中...</div>
+            </div>
+        </div>
+        
+        <!-- ページネーション -->
+        <div id="paginationContainer" class="d-flex justify-content-center mt-4" style="display: none !important;">
+            <nav>
+                <ul class="pagination" id="pagination"></ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- 統計モーダル -->
+<div class="modal fade" id="statsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-graph-up"></i>
+                    記憶統計
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="statsContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status"></div>
+                        <div class="mt-2">統計を計算中...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 記憶詳細モーダル -->
+<div class="modal fade" id="memoryDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-journal-text"></i>
+                    記憶詳細
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="memoryDetailContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="deleteMemory()">
+                    <i class="bi bi-trash"></i>
+                    削除
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    閉じる
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .memory-card {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 4px solid #FF9800;
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .memory-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    
+    .memory-card.timeline-item {
+        margin-left: 2rem;
+        position: relative;
+    }
+    
+    .memory-card.timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -2rem;
+        top: 1rem;
+        width: 12px;
+        height: 12px;
+        background: #FF9800;
+        border-radius: 50%;
+        box-shadow: 0 0 0 4px white, 0 0 0 6px #FF9800;
+    }
+    
+    .memory-card.timeline-item::after {
+        content: '';
+        position: absolute;
+        left: -1.5rem;
+        top: 2rem;
+        width: 2px;
+        height: calc(100% + 1rem);
+        background: #dee2e6;
+        z-index: -1;
+    }
+    
+    .memory-card:last-child.timeline-item::after {
+        display: none;
+    }
+    
+    .memory-list-item {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .memory-list-item:hover {
+        background: #f8f9fa;
+        border-color: #adb5bd;
+    }
+    
+    .memory-summary {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+        color: #333;
+    }
+    
+    .memory-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #eee;
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .memory-actions {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .memory-card:hover .memory-actions {
+        opacity: 1;
+    }
+    
+    .timeline-container {
+        position: relative;
+        padding-left: 2rem;
+    }
+    
+    .timeline-container::before {
+        content: '';
+        position: absolute;
+        left: 1rem;
+        top: 0;
+        width: 2px;
+        height: 100%;
+        background: linear-gradient(to bottom, #007bff, #28a745);
+    }
+    
+    .emotion-group {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 1rem;
+        padding: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .emotion-group-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        padding: 0.5rem 1rem;
+        background: white;
+        border-radius: 0.5rem;
+        text-align: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stats-item {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    
+    .stats-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-label {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 5rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+    }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let currentMemories = [];
+    let filteredMemories = [];
+    let currentPage = 1;
+    let itemsPerPage = 10;
+    let selectedMemoryId = null;
+
+    // ページ読み込み時に記憶を取得
+    document.addEventListener('DOMContentLoaded', function() {
+        loadMemories();
+    });
+
+    // 記憶一覧読み込み
+    async function loadMemories() {
+        try {
+            showLoading('memoriesContainer');
+            
+            const response = await fetch('/api/memories?limit=100');
+            const result = await response.json();
+            
+            if (result.success) {
+                currentMemories = result.memories || [];
+                filteredMemories = [...currentMemories];
+                displayMemories();
+                updateMemoryCount();
+            } else {
+                showError('記憶の読み込みに失敗しました');
+            }
+            
+        } catch (error) {
+            showError(`通信エラー: ${error.message}`);
+        }
+    }
+
+    // 記憶表示
+    function displayMemories() {
+        const container = document.getElementById('memoriesContainer');
+        const viewMode = document.getElementById('viewMode').value;
+        
+        if (filteredMemories.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-journal-x"></i>
+                    <h4>記憶が見つかりませんでした</h4>
+                    <p>フィルター条件を変更するか、新しい記憶を作成してください</p>
+                    <a href="/test" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i>
+                        テストデータを作成
+                    </a>
+                </div>
+            `;
+            return;
+        }
+        
+        if (viewMode === 'timeline') {
+            displayTimelineView();
+        } else if (viewMode === 'list') {
+            displayListView();
+        } else {
+            displayCardView();
+        }
+    }
+
+    // カード表示
+    function displayCardView() {
+        const container = document.getElementById('memoriesContainer');
+        let html = '<div class="row">';
+        
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, filteredMemories.length);
+        
+        for (let i = startIndex; i < endIndex; i++) {
+            const memory = filteredMemories[i];
+            const emotions = memory.emotions || [];
+            const emotionTags = emotions.map(emotion => 
+                `<span class="emotion-tag">${emotion}</span>`
+            ).join('');
+            
+            html += `
+                <div class="col-lg-6 mb-3">
+                    <div class="memory-card" onclick="showMemoryDetail('${memory.id}')">
+                        <div class="memory-actions">
+                            <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); confirmDelete('${memory.id}')" title="削除">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                        <div class="memory-summary">${memory.summary}</div>
+                        <div class="mb-2">${emotionTags}</div>
+                        <div class="memory-meta">
+                            <div>
+                                <i class="bi bi-calendar"></i>
+                                ${new Date(memory.timestamp).toLocaleString('ja-JP')}
+                            </div>
+                            <div>
+                                <i class="bi bi-person"></i>
+                                ${memory.user_id}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        container.innerHTML = html;
+        
+        updatePagination();
+    }
+
+    // リスト表示
+    function displayListView() {
+        const container = document.getElementById('memoriesContainer');
+        let html = '';
+        
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, filteredMemories.length);
+        
+        for (let i = startIndex; i < endIndex; i++) {
+            const memory = filteredMemories[i];
+            const emotions = memory.emotions ? memory.emotions.join(', ') : '';
+            
+            html += `
+                <div class="memory-list-item" onclick="showMemoryDetail('${memory.id}')">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="fw-bold">${memory.summary.substring(0, 80)}${memory.summary.length > 80 ? '...' : ''}</div>
+                        </div>
+                        <div class="col-md-2">
+                            <small class="text-muted">${emotions}</small>
+                        </div>
+                        <div class="col-md-2">
+                            <small class="text-muted">${new Date(memory.timestamp).toLocaleDateString('ja-JP')}</small>
+                        </div>
+                        <div class="col-md-2">
+                            <small class="text-muted">${memory.user_id}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        container.innerHTML = html;
+        updatePagination();
+    }
+
+    // タイムライン表示
+    function displayTimelineView() {
+        const container = document.getElementById('memoriesContainer');
+        
+        // 日付でグループ化
+        const groupedByDate = {};
+        filteredMemories.forEach(memory => {
+            const date = new Date(memory.timestamp).toLocaleDateString('ja-JP');
+            if (!groupedByDate[date]) {
+                groupedByDate[date] = [];
+            }
+            groupedByDate[date].push(memory);
+        });
+        
+        let html = '<div class="timeline-container">';
+        
+        Object.keys(groupedByDate).sort((a, b) => new Date(b) - new Date(a)).forEach(date => {
+            html += `
+                <div class="timeline-date">
+                    <h5 class="text-primary mb-3">
+                        <i class="bi bi-calendar3"></i>
+                        ${date}
+                    </h5>
+                </div>
+            `;
+            
+            groupedByDate[date].forEach(memory => {
+                const emotions = memory.emotions || [];
+                const emotionTags = emotions.map(emotion => 
+                    `<span class="emotion-tag">${emotion}</span>`
+                ).join('');
+                
+                html += `
+                    <div class="memory-card timeline-item" onclick="showMemoryDetail('${memory.id}')">
+                        <div class="memory-summary">${memory.summary}</div>
+                        <div class="mb-2">${emotionTags}</div>
+                        <div class="memory-meta">
+                            <div>
+                                <i class="bi bi-clock"></i>
+                                ${new Date(memory.timestamp).toLocaleTimeString('ja-JP')}
+                            </div>
+                            <div>
+                                <i class="bi bi-person"></i>
+                                ${memory.user_id}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+        
+        // タイムライン表示ではページネーション非表示
+        document.getElementById('paginationContainer').style.display = 'none';
+    }
+
+    // 表示モード変更
+    function changeViewMode() {
+        displayMemories();
+    }
+
+    // フィルター適用
+    function applyFilters() {
+        const userFilter = document.getElementById('userFilter').value;
+        const emotionFilter = document.getElementById('emotionFilter').value;
+        const sortBy = document.getElementById('sortBy').value;
+        
+        filteredMemories = currentMemories.filter(memory => {
+            // ユーザーフィルター
+            if (userFilter !== 'all' && memory.user_id !== userFilter) {
+                return false;
+            }
+            
+            // 感情フィルター
+            if (emotionFilter && (!memory.emotions || !memory.emotions.includes(emotionFilter))) {
+                return false;
+            }
+            
+            return true;
+        });
+        
+        // ソート
+        filteredMemories.sort((a, b) => {
+            if (sortBy === 'newest') {
+                return new Date(b.timestamp) - new Date(a.timestamp);
+            } else if (sortBy === 'oldest') {
+                return new Date(a.timestamp) - new Date(b.timestamp);
+            } else if (sortBy === 'emotion') {
+                const aEmotion = a.emotions?.[0] || '';
+                const bEmotion = b.emotions?.[0] || '';
+                return aEmotion.localeCompare(bEmotion);
+            }
+            return 0;
+        });
+        
+        currentPage = 1;
+        displayMemories();
+        updateMemoryCount();
+    }
+
+    // 記憶件数更新
+    function updateMemoryCount() {
+        const count = filteredMemories.length;
+        const total = currentMemories.length;
+        document.getElementById('memoryCount').textContent = 
+            `${count}件表示 (全${total}件)`;
+    }
+
+    // ページネーション更新
+    function updatePagination() {
+        const viewMode = document.getElementById('viewMode').value;
+        if (viewMode === 'timeline') return;
+        
+        const container = document.getElementById('paginationContainer');
+        const pagination = document.getElementById('pagination');
+        
+        const totalPages = Math.ceil(filteredMemories.length / itemsPerPage);
+        
+        if (totalPages <= 1) {
+            container.style.display = 'none';
+            return;
+        }
+        
+        container.style.display = 'flex';
+        
+        let html = '';
+        
+        // 前のページ
+        html += `
+            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">前</a>
+            </li>
+        `;
+        
+        // ページ番号
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage || i === 1 || i === totalPages || 
+                (i >= currentPage - 2 && i <= currentPage + 2)) {
+                html += `
+                    <li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                    </li>
+                `;
+            } else if (i === currentPage - 3 || i === currentPage + 3) {
+                html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+            }
+        }
+        
+        // 次のページ
+        html += `
+            <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">次</a>
+            </li>
+        `;
+        
+        pagination.innerHTML = html;
+    }
+
+    // ページ変更
+    function changePage(page) {
+        if (page < 1 || page > Math.ceil(filteredMemories.length / itemsPerPage)) return;
+        currentPage = page;
+        displayMemories();
+    }
+
+    // 記憶詳細表示
+    function showMemoryDetail(memoryId) {
+        selectedMemoryId = memoryId;
+        const memory = currentMemories.find(m => m.id === memoryId);
+        
+        if (!memory) {
+            showAlert('記憶が見つかりません', 'danger');
+            return;
+        }
+        
+        const emotions = memory.emotions || [];
+        const emotionTags = emotions.map(emotion => 
+            `<span class="emotion-tag">${emotion}</span>`
+        ).join('');
+        
+        const content = `
+            <div class="row">
+                <div class="col-12">
+                    <h6>記憶ID</h6>
+                    <p class="text-muted"><code>${memory.id}</code></p>
+                    
+                    <h6>要約</h6>
+                    <p class="bg-light p-3 rounded">${memory.summary}</p>
+                    
+                    <h6>感情</h6>
+                    <div class="mb-3">${emotionTags || '<span class="text-muted">感情情報なし</span>'}</div>
+                    
+                    <h6>メタデータ</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>ユーザーID:</strong> ${memory.user_id}<br>
+                            <strong>作成日時:</strong> ${new Date(memory.timestamp).toLocaleString('ja-JP')}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>セッションID:</strong> ${memory.session_id || '不明'}<br>
+                            <strong>スコア:</strong> ${memory.score || '未計算'}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('memoryDetailContent').innerHTML = content;
+        
+        const modal = new bootstrap.Modal(document.getElementById('memoryDetailModal'));
+        modal.show();
+    }
+
+    // 記憶削除確認
+    function confirmDelete(memoryId) {
+        selectedMemoryId = memoryId;
+        if (confirm('この記憶を削除しますか？この操作は元に戻せません。')) {
+            deleteMemory();
+        }
+    }
+
+    // 記憶削除
+    async function deleteMemory() {
+        if (!selectedMemoryId) return;
+        
+        try {
+            // 実際の削除API呼び出し（実装は省略）
+            // const response = await fetch(`/api/memory/${selectedMemoryId}`, { method: 'DELETE' });
+            
+            // デモ用：ローカルから削除
+            currentMemories = currentMemories.filter(m => m.id !== selectedMemoryId);
+            applyFilters();
+            
+            showAlert('記憶を削除しました', 'success');
+            
+            // モーダル閉じる
+            const modal = bootstrap.Modal.getInstance(document.getElementById('memoryDetailModal'));
+            if (modal) modal.hide();
+            
+        } catch (error) {
+            showAlert(`削除エラー: ${error.message}`, 'danger');
+        }
+    }
+
+    // 統計表示
+    function showStats() {
+        const modal = new bootstrap.Modal(document.getElementById('statsModal'));
+        modal.show();
+        
+        // 統計計算
+        calculateStats();
+    }
+
+    // 統計計算
+    function calculateStats() {
+        const content = document.getElementById('statsContent');
+        
+        // 感情統計
+        const emotionCounts = {};
+        let totalEmotions = 0;
+        
+        currentMemories.forEach(memory => {
+            if (memory.emotions) {
+                memory.emotions.forEach(emotion => {
+                    emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
+                    totalEmotions++;
+                });
+            }
+        });
+        
+        // ユーザー統計
+        const userCounts = {};
+        currentMemories.forEach(memory => {
+            userCounts[memory.user_id] = (userCounts[memory.user_id] || 0) + 1;
+        });
+        
+        // 日別統計
+        const dailyCounts = {};
+        currentMemories.forEach(memory => {
+            const date = new Date(memory.timestamp).toLocaleDateString('ja-JP');
+            dailyCounts[date] = (dailyCounts[date] || 0) + 1;
+        });
+        
+        // 上位感情
+        const topEmotions = Object.entries(emotionCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+        
+        let html = `
+            <div class="stats-grid">
+                <div class="stats-item">
+                    <div class="stats-number text-primary">${currentMemories.length}</div>
+                    <div class="stats-label">総記憶数</div>
+                </div>
+                <div class="stats-item">
+                    <div class="stats-number text-success">${Object.keys(emotionCounts).length}</div>
+                    <div class="stats-label">感情種類</div>
+                </div>
+                <div class="stats-item">
+                    <div class="stats-number text-warning">${Object.keys(userCounts).length}</div>
+                    <div class="stats-label">ユーザー数</div>
+                </div>
+                <div class="stats-item">
+                    <div class="stats-number text-info">${Object.keys(dailyCounts).length}</div>
+                    <div class="stats-label">アクティブ日数</div>
+                </div>
+            </div>
+            
+            <h6>上位感情</h6>
+            <div class="mb-3">
+        `;
+        
+        topEmotions.forEach(([emotion, count]) => {
+            const percentage = ((count / totalEmotions) * 100).toFixed(1);
+            html += `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="emotion-tag">${emotion}</span>
+                    <span>${count}回 (${percentage}%)</span>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        
+        content.innerHTML = html;
+    }
+
+    // エクスポート機能
+    function exportMemories() {
+        const exportData = {
+            exportDate: new Date().toISOString(),
+            totalMemories: currentMemories.length,
+            memories: currentMemories
+        };
+        
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        
+        const url = URL.createObjectURL(dataBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `memories_export_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showAlert('記憶データをエクスポートしました', 'success');
+    }
+
+    // ローディング表示
+    function showLoading(elementId) {
+        const element = document.getElementById(elementId);
+        element.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">読み込み中...</span>
+                </div>
+                <div class="mt-3">記憶を読み込み中...</div>
+            </div>
+        `;
+    }
+
+    // エラー表示
+    function showError(message) {
+        const container = document.getElementById('memoriesContainer');
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="bi bi-exclamation-triangle text-danger"></i>
+                <h4>エラーが発生しました</h4>
+                <p>${message}</p>
+                <button class="btn btn-primary" onclick="loadMemories()">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    再読み込み
+                </button>
+            </div>
+        `;
+    }
+</script>
+{% endblock %}

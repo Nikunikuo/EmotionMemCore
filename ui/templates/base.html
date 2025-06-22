@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ page_title }} - EmotionMemCore{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --secondary-color: #4CAF50;
+            --accent-color: #FF9800;
+            --danger-color: #f44336;
+            --warning-color: #FF5722;
+            --success-color: #4CAF50;
+            --info-color: #00BCD4;
+            --light-bg: #f8f9fa;
+            --dark-text: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+            color: var(--dark-text);
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .navbar-brand .emoji {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+        }
+
+        .sidebar {
+            min-height: calc(100vh - 56px);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar .nav-link {
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            margin: 0.25rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover {
+            background-color: rgba(255,255,255,0.2);
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link.active {
+            background-color: rgba(255,255,255,0.3);
+            font-weight: bold;
+        }
+
+        .sidebar .nav-link i {
+            margin-right: 0.75rem;
+            font-size: 1.2rem;
+        }
+
+        .main-content {
+            padding: 2rem;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 1.5rem;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .stats-card .icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .stats-card .number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--dark-text);
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-card .label {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-card .change {
+            font-size: 0.9rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+        }
+
+        .change.positive {
+            background-color: rgba(76, 175, 80, 0.1);
+            color: var(--success-color);
+        }
+
+        .change.negative {
+            background-color: rgba(244, 67, 54, 0.1);
+            color: var(--danger-color);
+        }
+
+        .memory-card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .memory-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        }
+
+        .memory-summary {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            color: var(--dark-text);
+        }
+
+        .emotion-tag {
+            display: inline-block;
+            background: linear-gradient(45deg, var(--accent-color), #FFB74D);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            margin: 0.25rem 0.25rem 0.25rem 0;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .memory-meta {
+            color: #666;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary-color), #42A5F5);
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 2rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(33, 150, 243, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, var(--success-color), #66BB6A);
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 2rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .form-control {
+            border-radius: 0.75rem;
+            border: 2px solid #e9ecef;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
+        }
+
+        .alert {
+            border-radius: 0.75rem;
+            border: none;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .alert-success {
+            background: linear-gradient(45deg, rgba(76, 175, 80, 0.1), rgba(102, 187, 106, 0.1));
+            color: var(--success-color);
+            border-left: 4px solid var(--success-color);
+        }
+
+        .alert-danger {
+            background: linear-gradient(45deg, rgba(244, 67, 54, 0.1), rgba(239, 83, 80, 0.1));
+            color: var(--danger-color);
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            color: var(--primary-color);
+        }
+
+        .loading-text {
+            margin-top: 1rem;
+            color: #666;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-healthy {
+            background-color: var(--success-color);
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+
+        .status-error {
+            background-color: var(--danger-color);
+            box-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
+        }
+
+        .status-warning {
+            background-color: var(--warning-color);
+            box-shadow: 0 0 10px rgba(255, 87, 34, 0.5);
+        }
+        
+        .text-purple {
+            color: #9C27B0 !important;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .stats-card {
+                padding: 1.5rem;
+            }
+            
+            .stats-card .number {
+                font-size: 2rem;
+            }
+        }
+
+        /* アニメーション */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- ナビゲーションバー -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <span class="emoji">🤖</span>
+                EmotionMemCore
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="http://localhost:8000/docs" target="_blank">
+                            <i class="bi bi-book"></i> API ドキュメント
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="http://localhost:8000/health/" target="_blank">
+                            <i class="bi bi-heart-pulse"></i> ヘルスチェック
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- サイドバー -->
+            <nav class="col-md-3 col-lg-2 sidebar">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.url.path == '/' %}active{% endif %}" href="/">
+                                <i class="bi bi-speedometer2"></i>
+                                ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/memories' in request.url.path %}active{% endif %}" href="/memories">
+                                <i class="bi bi-journal-bookmark"></i>
+                                記憶管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/search' in request.url.path %}active{% endif %}" href="/search">
+                                <i class="bi bi-search"></i>
+                                記憶検索
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/visualization' in request.url.path %}active{% endif %}" href="/visualization">
+                                <i class="bi bi-graph-up"></i>
+                                記憶可視化
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/logs' in request.url.path %}active{% endif %}" href="/logs">
+                                <i class="bi bi-terminal"></i>
+                                ログ表示
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/test' in request.url.path %}active{% endif %}" href="/test">
+                                <i class="bi bi-gear"></i>
+                                機能テスト
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/settings' in request.url.path %}active{% endif %}" href="/settings">
+                                <i class="bi bi-sliders"></i>
+                                設定
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- メインコンテンツ -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 main-content">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- 共通 JavaScript -->
+    <script>
+        // ページ読み込み時のアニメーション
+        document.addEventListener('DOMContentLoaded', function() {
+            // フェードインアニメーション
+            const elements = document.querySelectorAll('.stats-card, .memory-card');
+            elements.forEach((el, index) => {
+                el.style.animationDelay = `${index * 0.1}s`;
+                el.classList.add('fade-in-up');
+            });
+        });
+
+        // 共通のAPI呼び出し関数
+        async function apiCall(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API call failed:', error);
+                throw error;
+            }
+        }
+
+        // アラート表示関数
+        function showAlert(message, type = 'info', duration = 5000) {
+            const alertContainer = document.getElementById('alert-container') || createAlertContainer();
+            
+            const alertEl = document.createElement('div');
+            alertEl.className = `alert alert-${type} alert-dismissible fade show`;
+            alertEl.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            alertContainer.appendChild(alertEl);
+            
+            // 自動削除
+            setTimeout(() => {
+                if (alertEl.parentNode) {
+                    alertEl.remove();
+                }
+            }, duration);
+        }
+
+        function createAlertContainer() {
+            const container = document.createElement('div');
+            container.id = 'alert-container';
+            container.style.position = 'fixed';
+            container.style.top = '80px';
+            container.style.right = '20px';
+            container.style.zIndex = '1055';
+            container.style.maxWidth = '400px';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        // ローディング表示/非表示
+        function showLoading(element) {
+            if (typeof element === 'string') {
+                element = document.getElementById(element);
+            }
+            if (element) {
+                element.innerHTML = `
+                    <div class="loading">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">読み込み中...</span>
+                        </div>
+                        <div class="loading-text">読み込み中...</div>
+                    </div>
+                `;
+            }
+        }
+
+        function hideLoading(element, content = '') {
+            if (typeof element === 'string') {
+                element = document.getElementById(element);
+            }
+            if (element) {
+                element.innerHTML = content;
+            }
+        }
+
+        // 時刻フォーマット
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('ja-JP', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // 感情タグHTML生成
+        function createEmotionTags(emotions) {
+            return emotions.map(emotion => 
+                `<span class="emotion-tag">${emotion}</span>`
+            ).join('');
+        }
+    </script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

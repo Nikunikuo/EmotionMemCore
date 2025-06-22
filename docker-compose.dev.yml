@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  emotionmemcore-dev:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: emotionmemcore-dev
+    ports:
+      - "8000:8000"
+    environment:
+      # 開発環境設定
+      - ENVIRONMENT=development
+      - DEBUG_MODE=true
+      - HOST=0.0.0.0
+      - PORT=8000
+      
+      # モック設定（APIキー不要）
+      - LLM_MOCK_MODE=true
+      - LLM_PROVIDER=mock
+      
+      # データベース設定
+      - CHROMA_PERSIST_DIRECTORY=/app/data/chroma_db
+      - MEMORY_COLLECTION_NAME=dev_emotion_memories
+      
+      # セキュリティ設定（開発用に緩和）
+      - AUTH_ENABLED=false
+      - RATE_LIMIT_ENABLED=false
+      
+    volumes:
+      # ソースコードのマウント（ホットリロード用）
+      - .:/app
+      # データの永続化
+      - emotionmemcore_dev_data:/app/data
+      - emotionmemcore_dev_logs:/app/logs
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # 開発用の追加設定
+    stdin_open: true
+    tty: true
+
+volumes:
+  emotionmemcore_dev_data:
+    driver: local
+  emotionmemcore_dev_logs:
+    driver: local
