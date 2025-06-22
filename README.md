@@ -41,7 +41,7 @@ EmotionMemCoreは、AI Vtuberや対話型AIシステム向けの**感情付き�
 
 ```bash
 # 1. リポジトリクローン
-git clone https://github.com/your-username/EmotionMemCore.git
+git clone https://github.com/Nikunikuo/EmotionMemCore.git
 cd EmotionMemCore
 
 # 2. 開発環境起動（APIキー不要）
@@ -53,16 +53,49 @@ open http://localhost:8000/docs
 
 ### 🔧 ローカル開発環境
 
-```bash
-# 1. 依存関係インストール
+#### 🪟 Windows の場合
+
+**最も簡単な方法:**
+```powershell
+# quick_setup.bat をダブルクリック
+# または
+.\quick_setup.bat
+```
+
+**手動セットアップ:**
+```powershell
+# 1. Poetry インストール（PowerShell）
+(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
+
+# または pip でインストール
+pip install poetry
+
+# 2. 依存関係インストール
 poetry install
 
-# 2. 環境変数設定
+# 3. 環境変数設定
+copy .env.example .env
+# .envファイルを編集してAPIキーを設定
+
+# 4. 開発サーバー起動
+poetry run python main.py
+```
+
+#### 🐧 Mac/Linux の場合
+
+```bash
+# 1. Poetry インストール
+curl -sSL https://install.python-poetry.org | python3 -
+
+# 2. 依存関係インストール
+poetry install
+
+# 3. 環境変数設定
 cp .env.example .env
 # .envファイルを編集してAPIキーを設定
 
-# 3. 開発サーバー起動
-python main.py
+# 4. 開発サーバー起動
+poetry run python main.py
 ```
 
 ### 🎨 初心者向けWebダッシュボード
