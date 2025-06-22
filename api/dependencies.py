@@ -147,11 +147,11 @@ async def get_memory_service() -> MemoryService:
 
 
 # FastAPI Depends用のファクトリ関数
-def memory_service_dependency():
+async def memory_service_dependency():
     """FastAPI Depends用メモリサービス取得"""
-    return get_memory_service
+    return await get_memory_service()
 
 
-def collection_manager_dependency():
+async def collection_manager_dependency():
     """FastAPI Depends用コレクション管理取得"""
-    return get_collection_manager
+    return await get_collection_manager()
